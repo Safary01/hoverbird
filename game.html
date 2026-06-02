@@ -49,17 +49,30 @@ const bird = {
   width: 40,
   height: 40
 };
-  const pipes = [];
+
+// Pipes
+const pipes = [];
 
 const PIPE_WIDTH = 60;
 const PIPE_GAP = 220;
 const PIPE_SPEED = 2;
 
+const GROUND_HEIGHT = 60;
+
+let gameOver = false;
+
 // Flap
 function flap() {
+
+  if (gameOver) return;
+
   bird.velocity = bird.flapPower;
 }
-  function createPipe() {
+
+// Create Pipe
+function createPipe() {
+
+  if (gameOver) return;
 
   const minTopHeight = 80;
   const maxTopHeight = 350;
@@ -72,7 +85,6 @@ function flap() {
     x: canvas.width,
     topHeight: topHeight
   });
-
 }
 
 // Desktop click
@@ -87,28 +99,59 @@ canvas.addEventListener("touchstart", (e) => {
 // Update physics
 function update() {
 
+  if (gameOver) return;
+
   bird.velocity += bird.gravity;
   bird.y += bird.velocity;
+
+  // Move pipes
   for (let i = pipes.length - 1; i >= 0; i--) {
 
-  pipes[i].x -= PIPE_SPEED;
+    const pipe = pipes[i];
 
-  if (pipes[i].x + PIPE_WIDTH < 0) {
-    pipes.splice(i, 1);
+    pipe.x -= PIPE_SPEED;
+
+    // Remove off-screen pipes
+    if (pipe.x + PIPE_WIDTH < 0) {
+      pipes.splice(i, 1);
+      continue;
+    }
+
+    // Collision detection
+    const birdLeft = bird.x;
+    const birdRight = bird.x + bird.width;
+    const birdTop = bird.y;
+    const birdBottom = bird.y + bird.height;
+
+    const pipeLeft = pipe.x;
+    const pipeRight = pipe.x + PIPE_WIDTH;
+
+    const collision =
+      birdRight > pipeLeft &&
+      birdLeft < pipeRight &&
+      (
+        birdTop < pipe.topHeight ||
+        birdBottom > pipe.topHeight + PIPE_GAP
+      );
+
+    if (collision) {
+      gameOver = true;
+    }
   }
 
-}
-
-  // Prevent bird from leaving top
+  // Ceiling collision
   if (bird.y < 0) {
     bird.y = 0;
     bird.velocity = 0;
   }
 
-  // Prevent bird from falling through bottom
-  if (bird.y > canvas.height - bird.height) {
-    bird.y = canvas.height - bird.height;
+  // Ground collision
+  if (bird.y > canvas.height - GROUND_HEIGHT - bird.height) {
+
+    bird.y = canvas.height - GROUND_HEIGHT - bird.height;
     bird.velocity = 0;
+
+    gameOver = true;
   }
 }
 
@@ -117,7 +160,29 @@ function draw() {
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // Draw bird image
+  // Pipes
+  ctx.fillStyle = "green";
+
+  for (const pipe of pipes) {
+
+    // Top pipe
+    ctx.fillRect(
+      pipe.x,
+      0,
+      PIPE_WIDTH,
+      pipe.topHeight
+    );
+
+    // Bottom pipe
+    ctx.fillRect(
+      pipe.x,
+      pipe.topHeight + PIPE_GAP,
+      PIPE_WIDTH,
+      canvas.height
+    );
+  }
+
+  // Bird
   if (birdImage.complete) {
     ctx.drawImage(
       birdImage,
@@ -126,27 +191,39 @@ function draw() {
       bird.width,
       bird.height
     );
-    ctx.fillStyle = "green";
+  }
 
-for (const pipe of pipes) {
+  // Ground
+  ctx.fillStyle = "#c2b280";
 
-  // Top pipe
   ctx.fillRect(
-    pipe.x,
     0,
-    PIPE_WIDTH,
-    pipe.topHeight
+    canvas.height - GROUND_HEIGHT,
+    canvas.width,
+    GROUND_HEIGHT
   );
 
-  // Bottom pipe
-  ctx.fillRect(
-    pipe.x,
-    pipe.topHeight + PIPE_GAP,
-    PIPE_WIDTH,
-    canvas.height
-  );
+  // Game Over Overlay
+  if (gameOver) {
 
-}
+    ctx.fillStyle = "rgba(0,0,0,0.7)";
+    ctx.fillRect(
+      0,
+      0,
+      canvas.width,
+      canvas.height
+    );
+
+    ctx.fillStyle = "white";
+    ctx.font = "40px Arial";
+    ctx.fillText("Game Over", 70, 250);
+
+    ctx.font = "20px Arial";
+    ctx.fillText(
+      "Refresh to play again",
+      85,
+      300
+    );
   }
 }
 
@@ -159,8 +236,10 @@ function gameLoop() {
   requestAnimationFrame(gameLoop);
 }
 
-// Start game after image loads
+// Create pipes every 3 seconds
 setInterval(createPipe, 3000);
+
+// Start game
 birdImage.onload = () => {
   gameLoop();
 };
