@@ -49,10 +49,30 @@ const bird = {
   width: 40,
   height: 40
 };
+  const pipes = [];
+
+const PIPE_WIDTH = 60;
+const PIPE_GAP = 180;
+const PIPE_SPEED = 2;
 
 // Flap
 function flap() {
   bird.velocity = bird.flapPower;
+}
+  function createPipe() {
+
+  const minTopHeight = 80;
+  const maxTopHeight = 350;
+
+  const topHeight =
+    Math.random() * (maxTopHeight - minTopHeight) +
+    minTopHeight;
+
+  pipes.push({
+    x: canvas.width,
+    topHeight: topHeight
+  });
+
 }
 
 // Desktop click
@@ -69,6 +89,15 @@ function update() {
 
   bird.velocity += bird.gravity;
   bird.y += bird.velocity;
+  for (let i = pipes.length - 1; i >= 0; i--) {
+
+  pipes[i].x -= PIPE_SPEED;
+
+  if (pipes[i].x + PIPE_WIDTH < 0) {
+    pipes.splice(i, 1);
+  }
+
+}
 
   // Prevent bird from leaving top
   if (bird.y < 0) {
@@ -97,6 +126,27 @@ function draw() {
       bird.width,
       bird.height
     );
+    ctx.fillStyle = "green";
+
+for (const pipe of pipes) {
+
+  // Top pipe
+  ctx.fillRect(
+    pipe.x,
+    0,
+    PIPE_WIDTH,
+    pipe.topHeight
+  );
+
+  // Bottom pipe
+  ctx.fillRect(
+    pipe.x,
+    pipe.topHeight + PIPE_GAP,
+    PIPE_WIDTH,
+    canvas.height
+  );
+
+}
   }
 }
 
@@ -110,6 +160,7 @@ function gameLoop() {
 }
 
 // Start game after image loads
+setInterval(createPipe, 2000);
 birdImage.onload = () => {
   gameLoop();
 };
