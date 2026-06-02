@@ -2,7 +2,9 @@
 <html>
 <head>
   <title>HoverBird</title>
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
   <style>
     body {
       margin: 0;
@@ -12,31 +14,50 @@
       background: #87CEEB;
     }
 
-   canvas {
-  display: block;
-  margin: auto;
-  width: 100%;
-  max-width: 360px;
-  height: 100%;
-  background: #87CEEB;
-  border: 2px solid #333;
-}
+    canvas {
+      display: block;
+      margin: auto;
+      width: 100%;
+      max-width: 360px;
+      background: #87CEEB;
+      border: 2px solid #333;
+    }
 
     h2 {
       margin: 10px;
     }
+
+    #ui {
+      text-align: center;
+      margin-top: 10px;
+    }
+
+    button {
+      padding: 10px 20px;
+      margin: 5px;
+      font-size: 16px;
+    }
   </style>
 </head>
+
 <body>
 
 <h2>HoverBird</h2>
 
 <canvas id="gameCanvas" width="360" height="640"></canvas>
 
+<div id="ui"></div>
+
 <script>
 
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
+const ui = document.getElementById("ui");
+
+// Game states
+let gameStarted = false;
+let gameOver = false;
+let score = 0;
 
 // Bird image
 const birdImage = new Image();
@@ -59,23 +80,39 @@ const pipes = [];
 const PIPE_WIDTH = 60;
 const PIPE_GAP = 220;
 const PIPE_SPEED = 2;
-
 const GROUND_HEIGHT = 60;
 
-let gameOver = false;
+// ---------------- START GAME ----------------
 
-// Flap
+function startGame() {
+
+  if (gameStarted) return;
+
+  gameStarted = true;
+  ui.innerHTML = "";
+
+  setInterval(() => {
+    if (!gameStarted || gameOver) return;
+    createPipe();
+  }, 3000);
+}
+
+// ---------------- FLAP ----------------
+
 function flap() {
 
   if (gameOver) return;
 
+  if (!gameStarted) {
+    startGame();
+  }
+
   bird.velocity = bird.flapPower;
 }
 
-// Create Pipe
-function createPipe() {
+// ---------------- PIPE ----------------
 
-  if (gameOver) return;
+function createPipe() {
 
   const minTopHeight = 80;
   const maxTopHeight = 350;
@@ -86,41 +123,46 @@ function createPipe() {
 
   pipes.push({
     x: canvas.width,
-    topHeight: topHeight
+    topHeight: topHeight,
+    passed: false
   });
 }
 
-// Desktop click
+// ---------------- INPUT ----------------
+
 canvas.addEventListener("click", flap);
 
-// Mobile touch
 canvas.addEventListener("touchstart", (e) => {
   e.preventDefault();
   flap();
 });
 
-// Update physics
+// ---------------- UPDATE ----------------
+
 function update() {
 
-  if (gameOver) return;
+  if (!gameStarted || gameOver) return;
 
   bird.velocity += bird.gravity;
   bird.y += bird.velocity;
 
-  // Move pipes
   for (let i = pipes.length - 1; i >= 0; i--) {
 
     const pipe = pipes[i];
 
     pipe.x -= PIPE_SPEED;
 
-    // Remove off-screen pipes
+    // score system
+    if (!pipe.passed && pipe.x + PIPE_WIDTH < bird.x) {
+      score++;
+      pipe.passed = true;
+    }
+
     if (pipe.x + PIPE_WIDTH < 0) {
       pipes.splice(i, 1);
       continue;
     }
 
-    // Collision detection
     const birdLeft = bird.x;
     const birdRight = bird.x + bird.width;
     const birdTop = bird.y;
@@ -138,27 +180,43 @@ function update() {
       );
 
     if (collision) {
-      gameOver = true;
+      endGame();
     }
   }
 
-  // Ceiling collision
-  if (bird.y < 0) {
-    bird.y = 0;
-    bird.velocity = 0;
-  }
-
-  // Ground collision
   if (bird.y > canvas.height - GROUND_HEIGHT - bird.height) {
-
-    bird.y = canvas.height - GROUND_HEIGHT - bird.height;
-    bird.velocity = 0;
-
-    gameOver = true;
+    endGame();
   }
 }
 
-// Draw game
+// ---------------- GAME OVER ----------------
+
+function endGame() {
+
+  gameOver = true;
+
+  ui.innerHTML = `
+    <h3>Game Over</h3>
+    <p>Score: ${score}</p>
+    <button onclick="restartGame()">Play Again</button>
+    <button onclick="goDashboard()">Dashboard</button>
+  `;
+}
+
+// ---------------- RESTART ----------------
+
+window.restartGame = function () {
+  location.reload();
+};
+
+// ---------------- DASHBOARD ----------------
+
+window.goDashboard = function () {
+  window.location.href = "dashboard.html";
+};
+
+// ---------------- DRAW ----------------
+
 function draw() {
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -168,15 +226,8 @@ function draw() {
 
   for (const pipe of pipes) {
 
-    // Top pipe
-    ctx.fillRect(
-      pipe.x,
-      0,
-      PIPE_WIDTH,
-      pipe.topHeight
-    );
+    ctx.fillRect(pipe.x, 0, PIPE_WIDTH, pipe.topHeight);
 
-    // Bottom pipe
     ctx.fillRect(
       pipe.x,
       pipe.topHeight + PIPE_GAP,
@@ -206,43 +257,33 @@ function draw() {
     GROUND_HEIGHT
   );
 
-  // Game Over Overlay
-  if (gameOver) {
+  // Score display
+  ctx.fillStyle = "black";
+  ctx.font = "20px Arial";
+  ctx.fillText("Score: " + score, 10, 30);
 
-    ctx.fillStyle = "rgba(0,0,0,0.7)";
-    ctx.fillRect(
-      0,
-      0,
-      canvas.width,
-      canvas.height
-    );
+  // Start screen
+  if (!gameStarted && !gameOver) {
+    ctx.fillStyle = "rgba(0,0,0,0.5)";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     ctx.fillStyle = "white";
-    ctx.font = "40px Arial";
-    ctx.fillText("Game Over", 70, 250);
+    ctx.font = "30px Arial";
+    ctx.fillText("HoverBird", 100, 250);
 
     ctx.font = "20px Arial";
-    ctx.fillText(
-      "Refresh to play again",
-      85,
-      300
-    );
+    ctx.fillText("Tap to Start", 120, 300);
   }
 }
 
-// Game loop
-function gameLoop() {
+// ---------------- LOOP ----------------
 
+function gameLoop() {
   update();
   draw();
-
   requestAnimationFrame(gameLoop);
 }
 
-// Create pipes every 3 seconds
-setInterval(createPipe, 3000);
-
-// Start game
 birdImage.onload = () => {
   gameLoop();
 };
