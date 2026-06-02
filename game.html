@@ -1,1 +1,105 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>HoverBird</title>
 
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      text-align: center;
+      font-family: Arial, sans-serif;
+      background: #87CEEB;
+    }
+
+    canvas {
+      display: block;
+      margin: auto;
+      background: #87CEEB;
+      border: 2px solid #333;
+    }
+
+    h2 {
+      margin: 10px;
+    }
+  </style>
+</head>
+<body>
+
+<h2>HoverBird</h2>
+
+<canvas id="gameCanvas" width="360" height="640"></canvas>
+
+<script>
+
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+
+// Bird
+const bird = {
+  x: 120,
+  y: 320,
+  velocity: 0,
+  gravity: 0.5,
+  flapPower: -8,
+  size: 32
+};
+
+// Flap
+function flap() {
+  bird.velocity = bird.flapPower;
+}
+
+// Desktop click
+canvas.addEventListener("click", flap);
+
+// Mobile touch
+canvas.addEventListener("touchstart", (e) => {
+  e.preventDefault();
+  flap();
+});
+
+// Update physics
+function update() {
+
+  bird.velocity += bird.gravity;
+  bird.y += bird.velocity;
+
+  // Prevent bird from leaving top
+  if (bird.y < 0) {
+    bird.y = 0;
+    bird.velocity = 0;
+  }
+
+  // Prevent bird from falling through bottom
+  if (bird.y > canvas.height - bird.size) {
+    bird.y = canvas.height - bird.size;
+    bird.velocity = 0;
+  }
+}
+
+// Draw game
+function draw() {
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Bird emoji
+  ctx.font = "32px Arial";
+  ctx.fillText("🐦", bird.x, bird.y);
+}
+
+// Game loop
+function gameLoop() {
+
+  update();
+  draw();
+
+  requestAnimationFrame(gameLoop);
+}
+
+gameLoop();
+
+</script>
+
+</body>
+</html>
