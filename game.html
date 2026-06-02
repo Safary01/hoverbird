@@ -35,6 +35,10 @@
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
+// Bird image
+const birdImage = new Image();
+birdImage.src = "assets/images/bird.png";
+
 // Bird
 const bird = {
   x: 120,
@@ -42,7 +46,8 @@ const bird = {
   velocity: 0,
   gravity: 0.5,
   flapPower: -8,
-  size: 32
+  width: 40,
+  height: 40
 };
 
 // Flap
@@ -72,8 +77,8 @@ function update() {
   }
 
   // Prevent bird from falling through bottom
-  if (bird.y > canvas.height - bird.size) {
-    bird.y = canvas.height - bird.size;
+  if (bird.y > canvas.height - bird.height) {
+    bird.y = canvas.height - bird.height;
     bird.velocity = 0;
   }
 }
@@ -83,9 +88,16 @@ function draw() {
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // Bird emoji
-  ctx.font = "32px Arial";
-  ctx.fillText("🐦", bird.x, bird.y);
+  // Draw bird image
+  if (birdImage.complete) {
+    ctx.drawImage(
+      birdImage,
+      bird.x,
+      bird.y,
+      bird.width,
+      bird.height
+    );
+  }
 }
 
 // Game loop
@@ -97,7 +109,10 @@ function gameLoop() {
   requestAnimationFrame(gameLoop);
 }
 
-gameLoop();
+// Start game after image loads
+birdImage.onload = () => {
+  gameLoop();
+};
 
 </script>
 
