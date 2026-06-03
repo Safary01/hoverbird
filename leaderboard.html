@@ -86,12 +86,12 @@ async function loadLeaderboard() {
 
     users.push({
       name: data.username || "Player",
-      score: data.bestScore || 0
+      score: data.seasonScore || 0
     });
   });
 
   // Sort highest first
-  users.sort((a, b) => b.score - a.score);
+  users.sort((a, b) => b.seasonScore - a.seasonScore);
 
   board.innerHTML = "";
 
