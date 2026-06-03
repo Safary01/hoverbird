@@ -1,1 +1,123 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>HoverBird Leaderboard</title>
 
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #87CEEB;
+      text-align: center;
+    }
+
+    h2 {
+      margin: 15px;
+    }
+
+    .board {
+      max-width: 400px;
+      margin: auto;
+      padding: 10px;
+    }
+
+    .player {
+      background: white;
+      margin: 8px 0;
+      padding: 12px;
+      border-radius: 10px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 18px;
+    }
+
+    .rank {
+      font-weight: bold;
+      width: 40px;
+    }
+
+    .name {
+      flex: 1;
+      text-align: left;
+    }
+
+    .score {
+      font-weight: bold;
+    }
+
+    button {
+      padding: 10px 15px;
+      margin: 10px;
+      font-size: 16px;
+    }
+  </style>
+</head>
+
+<body>
+
+<h2>🏆 HoverBird Leaderboard</h2>
+
+<div class="board" id="board">Loading...</div>
+
+<button onclick="goDashboard()">Back to Dashboard</button>
+
+<script type="module">
+
+import { db } from "./js/firebase-config.js";
+
+import {
+  collection,
+  getDocs
+} from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
+
+const board = document.getElementById("board");
+
+// Load leaderboard
+async function loadLeaderboard() {
+
+  const snapshot = await getDocs(collection(db, "users"));
+
+  let users = [];
+
+  snapshot.forEach(doc => {
+    const data = doc.data();
+
+    users.push({
+      name: data.username || "Player",
+      score: data.bestScore || 0
+    });
+  });
+
+  // Sort highest first
+  users.sort((a, b) => b.score - a.score);
+
+  board.innerHTML = "";
+
+  users.forEach((user, index) => {
+
+    const div = document.createElement("div");
+    div.className = "player";
+
+    div.innerHTML = `
+      <div class="rank">#${index + 1}</div>
+      <div class="name">${user.name}</div>
+      <div class="score">${user.score}</div>
+    `;
+
+    board.appendChild(div);
+  });
+}
+
+loadLeaderboard();
+
+// Back button
+window.goDashboard = function () {
+  window.location.href = "dashboard.html";
+};
+
+</script>
+
+</body>
+</html>
