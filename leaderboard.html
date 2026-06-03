@@ -92,24 +92,35 @@ async function loadLeaderboard() {
 
 // Sort highest first
 users.sort((a, b) => b.score - a.score);
-  board.innerHTML = "";
 
-  users.forEach((user, index) => {
+board.innerHTML = "";
 
-    const div = document.createElement("div");
-    div.className = "player";
+users.forEach((user, index) => {
 
-    div.innerHTML = `
-      <div class="rank">#${index + 1}</div>
-      <div class="name">${user.name}</div>
-      <div class="score">${user.score}</div>
-    `;
+  const div = document.createElement("div");
+  div.className = "player";
 
-    board.appendChild(div);
-  });
+  let rankDisplay = `#${index + 1}`;
+
+  if (index === 0) {
+    rankDisplay = "🥇";
+  } else if (index === 1) {
+    rankDisplay = "🥈";
+  } else if (index === 2) {
+    rankDisplay = "🥉";
+  }
+
+  div.innerHTML = `
+    <div class="rank">${rankDisplay}</div>
+    <div class="name">${user.name}</div>
+    <div class="score">${user.score}</div>
+  `;
+
+  board.appendChild(div);
+
+});
+
 }
-
-loadLeaderboard();
 
 // Back button
 window.goDashboard = function () {
