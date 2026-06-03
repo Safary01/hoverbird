@@ -90,9 +90,8 @@ async function loadLeaderboard() {
     });
   });
 
-  // Sort highest first
-  users.sort((a, b) => b.seasonScore - a.seasonScore);
-
+// Sort highest first
+users.sort((a, b) => b.score - a.score);
   board.innerHTML = "";
 
   users.forEach((user, index) => {
