@@ -85,6 +85,7 @@
 <div id="ui"></div>
 
 <script type="module">
+
 import { auth, db } from "./js/firebase-config.js";
 
 import {
@@ -94,14 +95,18 @@ import {
 import {
   doc,
   getDoc,
+  setDoc,
   updateDoc
-} from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";  
+} from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
+
+// ---------------- DOM ----------------
 
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 const ui = document.getElementById("ui");
 
-// Game state
+// ---------------- STATE ----------------
+
 let gameStarted = false;
 let gameOver = false;
 let score = 0;
@@ -109,11 +114,11 @@ let pipeTimer = null;
 let currentUser = null;
 let bestScore = 0;
 
-// Bird image
+// ---------------- BIRD ----------------
+
 const birdImage = new Image();
 birdImage.src = "assets/images/bird.png";
 
-// Bird
 const bird = {
   x: 120,
   y: 320,
@@ -124,7 +129,8 @@ const bird = {
   height: 40
 };
 
-// Pipes
+// ---------------- PIPES ----------------
+
 const pipes = [];
 
 const PIPE_WIDTH = 60;
@@ -132,9 +138,9 @@ const PIPE_GAP = 220;
 const PIPE_SPEED = 2;
 const GROUND_HEIGHT = 60;
 
-// ---------------- START GAME ----------------
+// ---------------- AUTH ----------------
 
-  onAuthStateChanged(auth, async (user) => {
+onAuthStateChanged(auth, async (user) => {
 
   if (!user) {
     window.location.href = "login.html";
@@ -149,23 +155,20 @@ const GROUND_HEIGHT = 60;
   if (userSnap.exists()) {
     bestScore = userSnap.data().bestScore || 0;
   }
-
 });
+
+// ---------------- START GAME ----------------
+
 function startGame() {
 
   if (gameStarted) return;
 
   gameStarted = true;
-
   ui.style.display = "none";
   ui.innerHTML = "";
 
   pipeTimer = setInterval(() => {
-
-    if (gameOver) return;
-
-    createPipe();
-
+    if (!gameOver) createPipe();
   }, 3000);
 }
 
@@ -175,14 +178,12 @@ function flap() {
 
   if (gameOver) return;
 
-  if (!gameStarted) {
-    startGame();
-  }
+  if (!gameStarted) startGame();
 
   bird.velocity = bird.flapPower;
 }
 
-// ---------------- CREATE PIPE ----------------
+// ---------------- PIPE ----------------
 
 function createPipe() {
 
@@ -210,14 +211,6 @@ canvas.addEventListener("touchstart", (e) => {
 });
 
 // ---------------- END GAME ----------------
-
-import { auth, db } from "./js/firebase-config.js";
-import {
-  doc,
-  getDoc,
-  setDoc,
-  updateDoc
-} from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 
 function getCurrentSeason() {
   const now = new Date();
@@ -248,16 +241,13 @@ async function endGame() {
 
       const data = snap.data();
 
-      // Reset season if new month
       if (data.season !== season) {
         await updateDoc(ref, {
           season,
           seasonScore: score
         });
       } else {
-
         const currentSeasonScore = data.seasonScore || 0;
-
         if (score > currentSeasonScore) {
           await updateDoc(ref, {
             seasonScore: score
@@ -297,6 +287,7 @@ async function endGame() {
     </div>
   `;
 }
+
 // ---------------- UPDATE ----------------
 
 function update() {
@@ -312,33 +303,22 @@ function update() {
 
     pipe.x -= PIPE_SPEED;
 
-    // Score
     if (!pipe.passed && pipe.x + PIPE_WIDTH < bird.x) {
       pipe.passed = true;
       score++;
     }
 
-    // Remove pipe
     if (pipe.x + PIPE_WIDTH < 0) {
       pipes.splice(i, 1);
       continue;
     }
 
-    // Collision
-    const birdLeft = bird.x;
-    const birdRight = bird.x + bird.width;
-    const birdTop = bird.y;
-    const birdBottom = bird.y + bird.height;
-
-    const pipeLeft = pipe.x;
-    const pipeRight = pipe.x + PIPE_WIDTH;
-
     const collision =
-      birdRight > pipeLeft &&
-      birdLeft < pipeRight &&
+      bird.x + bird.width > pipe.x &&
+      bird.x < pipe.x + PIPE_WIDTH &&
       (
-        birdTop < pipe.topHeight ||
-        birdBottom > pipe.topHeight + PIPE_GAP
+        bird.y < pipe.topHeight ||
+        bird.y + bird.height > pipe.topHeight + PIPE_GAP
       );
 
     if (collision) {
@@ -347,17 +327,7 @@ function update() {
     }
   }
 
-  // Ceiling
-  if (bird.y < 0) {
-    bird.y = 0;
-    bird.velocity = 0;
-  }
-
-  // Ground
-  if (
-    bird.y >
-    canvas.height - GROUND_HEIGHT - bird.height
-  ) {
+  if (bird.y > canvas.height - GROUND_HEIGHT - bird.height) {
     endGame();
   }
 }
@@ -366,24 +336,13 @@ function update() {
 
 function draw() {
 
-  ctx.clearRect(
-    0,
-    0,
-    canvas.width,
-    canvas.height
-  );
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // Pipes
   ctx.fillStyle = "green";
 
   for (const pipe of pipes) {
 
-    ctx.fillRect(
-      pipe.x,
-      0,
-      PIPE_WIDTH,
-      pipe.topHeight
-    );
+    ctx.fillRect(pipe.x, 0, PIPE_WIDTH, pipe.topHeight);
 
     ctx.fillRect(
       pipe.x,
@@ -393,9 +352,7 @@ function draw() {
     );
   }
 
-  // Bird
   if (birdImage.complete) {
-
     ctx.drawImage(
       birdImage,
       bird.x,
@@ -403,10 +360,8 @@ function draw() {
       bird.width,
       bird.height
     );
-
   }
 
-  // Ground
   ctx.fillStyle = "#c2b280";
 
   ctx.fillRect(
@@ -416,62 +371,37 @@ function draw() {
     GROUND_HEIGHT
   );
 
-  // Score
   ctx.fillStyle = "black";
   ctx.font = "20px Arial";
-  ctx.fillText(
-    "Score: " + score,
-    10,
-    30
-  );
+  ctx.fillText("Score: " + score, 10, 30);
 
-  // Start Screen
   if (!gameStarted) {
 
-    ctx.fillStyle =
-      "rgba(0,0,0,0.5)";
-
-    ctx.fillRect(
-      0,
-      0,
-      canvas.width,
-      canvas.height
-    );
+    ctx.fillStyle = "rgba(0,0,0,0.5)";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     ctx.fillStyle = "white";
     ctx.font = "30px Arial";
-    ctx.fillText(
-      "HoverBird",
-      100,
-      250
-    );
+    ctx.fillText("HoverBird", 100, 250);
 
     ctx.font = "20px Arial";
-    ctx.fillText(
-      "Tap to Start",
-      120,
-      300
-    );
+    ctx.fillText("Tap to Start", 120, 300);
   }
 }
 
 // ---------------- LOOP ----------------
 
 function gameLoop() {
-
   update();
   draw();
-
   requestAnimationFrame(gameLoop);
 }
 
 // ---------------- BUTTONS ----------------
 
-window.restartGame = function () {
-  location.reload();
-};
+window.restartGame = () => location.reload();
 
-window.goDashboard = function () {
+window.goDashboard = () => {
   window.location.href = "dashboard.html";
 };
 
@@ -481,7 +411,7 @@ birdImage.onload = () => {
   gameLoop();
 };
 
-    </script>
+</script>
 
 </body>
 </html>
