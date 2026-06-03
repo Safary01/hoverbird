@@ -211,34 +211,77 @@ canvas.addEventListener("touchstart", (e) => {
 
 // ---------------- END GAME ----------------
 
+import { auth, db } from "./js/firebase-config.js";
+import {
+  doc,
+  getDoc,
+  setDoc,
+  updateDoc
+} from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
+
+function getCurrentSeason() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  return `${year}-${month}`;
+}
+
 async function endGame() {
 
   if (gameOver) return;
 
   gameOver = true;
 
-  if (pipeTimer) {
-    clearInterval(pipeTimer);
-  }
+  if (pipeTimer) clearInterval(pipeTimer);
 
-  let newBestMessage = "";
+  const user = auth.currentUser;
+  const season = getCurrentSeason();
 
-  if (currentUser && score > bestScore) {
+  let isNewBest = false;
 
-    const userRef = doc(
-      db,
-      "users",
-      currentUser.uid
-    );
+  if (user) {
 
-    await updateDoc(userRef, {
-      bestScore: score
-    });
+    const ref = doc(db, "users", user.uid);
+    const snap = await getDoc(ref);
 
-    bestScore = score;
+    if (snap.exists()) {
 
-    newBestMessage =
-      "<p>🎉 New Best Score!</p>";
+      const data = snap.data();
+
+      // Reset season if new month
+      if (data.season !== season) {
+        await updateDoc(ref, {
+          season,
+          seasonScore: score
+        });
+      } else {
+
+        const currentSeasonScore = data.seasonScore || 0;
+
+        if (score > currentSeasonScore) {
+          await updateDoc(ref, {
+            seasonScore: score
+          });
+        }
+      }
+
+      if (score > (data.bestScore || 0)) {
+        await updateDoc(ref, {
+          bestScore: score
+        });
+        isNewBest = true;
+      }
+
+    } else {
+
+      await setDoc(ref, {
+        username: "Player",
+        season,
+        seasonScore: score,
+        bestScore: score,
+        createdAt: Date.now()
+      });
+    }
   }
 
   ui.style.display = "flex";
@@ -247,13 +290,13 @@ async function endGame() {
     <div class="panel">
       <h2>Game Over</h2>
       <p>Score: ${score}</p>
-      ${newBestMessage}
+      <p>Season: ${season}</p>
+      ${isNewBest ? "<p>🎉 New Best Score!</p>" : ""}
       <button onclick="restartGame()">Play Again</button>
       <button onclick="goDashboard()">Dashboard</button>
     </div>
   `;
 }
-
 // ---------------- UPDATE ----------------
 
 function update() {
