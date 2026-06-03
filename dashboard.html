@@ -11,9 +11,12 @@
   <p id="score">Best Score: ...</p>
 
   <button onclick="goToGame()">Play HoverBird</button>
-  <br><br>
 
-  <button onclick="logout()">Logout</button>
+<button onclick="goToLeaderboard()">Leaderboard</button>
+
+<br><br>
+
+<button onclick="logout()">Logout</button>
 
   <script type="module">
     import { auth, db } from "./js/firebase-config.js";
@@ -67,15 +70,20 @@
     });
 
     // Go to game
-    window.goToGame = function () {
-      window.location.href = "game.html";
-    };
+window.goToGame = function () {
+  window.location.href = "game.html";
+};
 
-    // Logout
-    window.logout = function () {
-      signOut(auth);
-      window.location.href = "login.html";
-    };
+// Go to leaderboard
+window.goToLeaderboard = function () {
+  window.location.href = "leaderboard.html";
+};
+
+// Logout
+window.logout = function () {
+  signOut(auth);
+  window.location.href = "login.html";
+};
 
   </script>
 
