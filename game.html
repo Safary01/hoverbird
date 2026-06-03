@@ -82,9 +82,20 @@
 
 <canvas id="gameCanvas" width="360" height="640"></canvas>
 
-<div id="ui"></d>
+<div id="ui"></div>
 
-    <script>
+<script type="module">
+import { auth, db } from "./js/firebase-config.js";
+
+import {
+  onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js";
+
+import {
+  doc,
+  getDoc,
+  updateDoc
+} from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";  
 
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
@@ -95,6 +106,8 @@ let gameStarted = false;
 let gameOver = false;
 let score = 0;
 let pipeTimer = null;
+let currentUser = null;
+let bestScore = 0;
 
 // Bird image
 const birdImage = new Image();
@@ -121,6 +134,23 @@ const GROUND_HEIGHT = 60;
 
 // ---------------- START GAME ----------------
 
+  onAuthStateChanged(auth, async (user) => {
+
+  if (!user) {
+    window.location.href = "login.html";
+    return;
+  }
+
+  currentUser = user;
+
+  const userRef = doc(db, "users", user.uid);
+  const userSnap = await getDoc(userRef);
+
+  if (userSnap.exists()) {
+    bestScore = userSnap.data().bestScore || 0;
+  }
+
+});
 function startGame() {
 
   if (gameStarted) return;
@@ -181,7 +211,7 @@ canvas.addEventListener("touchstart", (e) => {
 
 // ---------------- END GAME ----------------
 
-function endGame() {
+async function endGame() {
 
   if (gameOver) return;
 
@@ -191,12 +221,33 @@ function endGame() {
     clearInterval(pipeTimer);
   }
 
+  let newBestMessage = "";
+
+  if (currentUser && score > bestScore) {
+
+    const userRef = doc(
+      db,
+      "users",
+      currentUser.uid
+    );
+
+    await updateDoc(userRef, {
+      bestScore: score
+    });
+
+    bestScore = score;
+
+    newBestMessage =
+      "<p>🎉 New Best Score!</p>";
+  }
+
   ui.style.display = "flex";
 
   ui.innerHTML = `
     <div class="panel">
       <h2>Game Over</h2>
       <p>Score: ${score}</p>
+      ${newBestMessage}
       <button onclick="restartGame()">Play Again</button>
       <button onclick="goDashboard()">Dashboard</button>
     </div>
