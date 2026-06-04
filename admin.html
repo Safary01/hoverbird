@@ -126,14 +126,69 @@ onAuthStateChanged(auth, async (user) => {
 
 // Placeholder button
 
-document
-  .getElementById("archiveBtn")
-  .addEventListener("click", () => {
+import { db } from "./js/firebase-config.js";
+import {
+  collection,
+  getDocs,
+  doc,
+  setDoc
+} from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 
-    statusText.innerText =
-      "Archive feature coming next.";
+function getCurrentSeason() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  return `${year}-${month}`;
+}
 
-  });
+document.getElementById("archiveBtn").addEventListener("click", async () => {
+
+  const status = document.getElementById("status");
+  status.innerText = "Archiving...";
+
+  try {
+    const snapshot = await getDocs(collection(db, "users"));
+
+    let users = [];
+
+    snapshot.forEach((d) => {
+      const data = d.data();
+
+      users.push({
+        name: data.username || "Player",
+        score: data.bestScore || 0
+      });
+    });
+
+    // sort highest first
+    users.sort((a, b) => b.score - a.score);
+
+    const top3 = users.slice(0, 3);
+
+    const season = getCurrentSeason();
+
+    await setDoc(doc(db, "monthlyWinners", season), {
+      season: season,
+
+      firstPlace: top3[0]?.name || null,
+      firstScore: top3[0]?.score || 0,
+
+      secondPlace: top3[1]?.name || null,
+      secondScore: top3[1]?.score || 0,
+
+      thirdPlace: top3[2]?.name || null,
+      thirdScore: top3[2]?.score || 0,
+
+      archivedAt: Date.now()
+    });
+
+    status.innerText = "✅ Season archived successfully!";
+
+  } catch (err) {
+    console.error(err);
+    status.innerText = "❌ Archive failed. Check console.";
+  }
+});
 
 // Dashboard button
 
