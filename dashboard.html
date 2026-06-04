@@ -19,73 +19,118 @@
 <button onclick="logout()">Logout</button>
 
   <script type="module">
-    import { auth, db } from "./js/firebase-config.js";
+import { auth, db } from "./js/firebase-config.js";
 
-    import {
-      onAuthStateChanged,
-      signOut
-    } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js";
+import {
+  onAuthStateChanged,
+  signOut
+} from "https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js";
 
-    import {
-      doc,
-      getDoc
-    } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
+import {
+  doc,
+  getDoc,
+  updateDoc
+} from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 
-    const welcome = document.getElementById("welcome");
-    const scoreText = document.getElementById("score");
+const welcome = document.getElementById("welcome");
+const scoreText = document.getElementById("score");
 
-    let currentUser = null;
+let currentUser = null;
 
-    // Check login state
-    onAuthStateChanged(auth, async (user) => {
+// ---------------- SEASON ----------------
 
-      if (!user) {
-        window.location.href = "login.html";
-        return;
-      }
+function getCurrentSeason() {
 
-      await user.reload();
+  const now = new Date();
 
-      if (!user.emailVerified) {
-        window.location.href = "login.html";
-        return;
-      }
+  const year = now.getFullYear();
 
-      currentUser = user;
+  const month =
+    String(now.getMonth() + 1).padStart(2, "0");
 
-      // Get user data from Firestore
-      const userRef = doc(db, "users", user.uid);
-      const userSnap = await getDoc(userRef);
+  return `${year}-${month}`;
+}
 
-      if (userSnap.exists()) {
-        const data = userSnap.data();
+// ---------------- AUTH ----------------
 
-        welcome.innerText = "Welcome, " + data.username;
-        scoreText.innerText = "Best Score: " + (data.bestScore || 0);
-      } else {
-        welcome.innerText = "Welcome, Player";
-        scoreText.innerText = "Best Score: 0";
-      }
+onAuthStateChanged(auth, async (user) => {
 
-    });
+  if (!user) {
+    window.location.href = "login.html";
+    return;
+  }
 
-    // Go to game
+  await user.reload();
+
+  if (!user.emailVerified) {
+    window.location.href = "login.html";
+    return;
+  }
+
+  currentUser = user;
+
+  const userRef = doc(db, "users", user.uid);
+  const userSnap = await getDoc(userRef);
+
+  if (userSnap.exists()) {
+
+    const data = userSnap.data();
+
+    const currentSeason =
+      getCurrentSeason();
+
+    // Automatic monthly reset
+    if (data.season !== currentSeason) {
+
+      await updateDoc(userRef, {
+        season: currentSeason,
+        seasonScore: 0
+      });
+
+      data.season = currentSeason;
+      data.seasonScore = 0;
+    }
+
+    welcome.innerText =
+      "Welcome, " +
+      (data.username || "Player");
+
+    scoreText.innerText =
+      "Best Score: " +
+      (data.bestScore || 0);
+
+  } else {
+
+    welcome.innerText =
+      "Welcome, Player";
+
+    scoreText.innerText =
+      "Best Score: 0";
+  }
+
+});
+
+// ---------------- NAVIGATION ----------------
+
 window.goToGame = function () {
   window.location.href = "game.html";
 };
 
-// Go to leaderboard
 window.goToLeaderboard = function () {
   window.location.href = "leaderboard.html";
 };
 
-// Logout
+// ---------------- LOGOUT ----------------
+
 window.logout = function () {
+
   signOut(auth);
-  window.location.href = "login.html";
+
+  window.location.href =
+    "login.html";
 };
 
-  </script>
+</script>
 
 </body>
 </html>
