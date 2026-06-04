@@ -65,34 +65,34 @@
 
 <script type="module">
 
-import { auth } from "./js/firebase-config.js";
+import { auth, db } from "./js/firebase-config.js";
 
 import {
   onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js";
 
-const ADMIN_EMAIL =
-  "uthmanibraheem47@gmail.com";
+import {
+  collection,
+  getDocs,
+  doc,
+  setDoc
+} from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 
-const seasonText =
-  document.getElementById("season");
+const ADMIN_EMAIL = "uthmanibraheem47@gmail.com";
 
-const statusText =
-  document.getElementById("status");
+const seasonText = document.getElementById("season");
+const statusText = document.getElementById("status");
+
+// ---------------- SEASON FUNCTION (ONLY ONCE) ----------------
 
 function getCurrentSeason() {
-
   const now = new Date();
-
   const year = now.getFullYear();
-
-  const month =
-    String(now.getMonth() + 1).padStart(2, "0");
-
+  const month = String(now.getMonth() + 1).padStart(2, "0");
   return `${year}-${month}`;
 }
 
-// Check admin access
+// ---------------- ADMIN AUTH CHECK ----------------
 
 onAuthStateChanged(auth, async (user) => {
 
@@ -109,42 +109,19 @@ onAuthStateChanged(auth, async (user) => {
   }
 
   if (user.email !== ADMIN_EMAIL) {
-
     alert("Access denied.");
-
-    window.location.href =
-      "dashboard.html";
-
+    window.location.href = "dashboard.html";
     return;
   }
 
-  seasonText.innerText =
-    "Current Season: " +
-    getCurrentSeason();
-
+  seasonText.innerText = "Current Season: " + getCurrentSeason();
 });
 
-// Placeholder button
-
-import { db } from "./js/firebase-config.js";
-import {
-  collection,
-  getDocs,
-  doc,
-  setDoc
-} from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
-
-function getCurrentSeason() {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, "0");
-  return `${year}-${month}`;
-}
+// ---------------- ARCHIVE LOGIC ----------------
 
 document.getElementById("archiveBtn").addEventListener("click", async () => {
 
-  const status = document.getElementById("status");
-  status.innerText = "Archiving...";
+  statusText.innerText = "Archiving...";
 
   try {
     const snapshot = await getDocs(collection(db, "users"));
@@ -160,7 +137,7 @@ document.getElementById("archiveBtn").addEventListener("click", async () => {
       });
     });
 
-    // sort highest first
+    // Sort highest first
     users.sort((a, b) => b.score - a.score);
 
     const top3 = users.slice(0, 3);
@@ -182,21 +159,18 @@ document.getElementById("archiveBtn").addEventListener("click", async () => {
       archivedAt: Date.now()
     });
 
-    status.innerText = "✅ Season archived successfully!";
+    statusText.innerText = "✅ Season archived successfully!";
 
   } catch (err) {
     console.error(err);
-    status.innerText = "❌ Archive failed. Check console.";
+    statusText.innerText = "❌ Archive failed. Check console.";
   }
 });
 
-// Dashboard button
+// ---------------- NAVIGATION ----------------
 
 window.goDashboard = function () {
-
-  window.location.href =
-    "dashboard.html";
-
+  window.location.href = "dashboard.html";
 };
 
 </script>
