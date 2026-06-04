@@ -1,0 +1,71 @@
+/* =========================
+   HOVERBIRD GLOBAL STYLE
+========================= */
+
+body {
+  margin: 0;
+  font-family: 'Arial', sans-serif;
+  background: linear-gradient(#87CEEB, #cfefff);
+  color: #222;
+  text-align: center;
+}
+
+/* Header */
+h2 {
+  margin: 15px 0;
+  font-size: 28px;
+}
+
+/* Buttons */
+button {
+  padding: 12px 18px;
+  margin: 8px;
+  font-size: 16px;
+  border: none;
+  border-radius: 8px;
+  background: #2d6cdf;
+  color: white;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+button:hover {
+  background: #1f4fb8;
+}
+
+/* Cards (dashboard + leaderboard items) */
+.card {
+  background: white;
+  max-width: 400px;
+  margin: 10px auto;
+  padding: 12px;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+/* Canvas game styling */
+canvas {
+  display: block;
+  margin: auto;
+  background: transparent;
+  border: 2px solid #333;
+  border-radius: 10px;
+  max-width: 360px;
+  width: 100%;
+}
+
+/* UI container */
+#ui {
+  margin-top: 10px;
+}
+
+/* Leaderboard rows */
+.player {
+  background: white;
+  margin: 8px auto;
+  padding: 12px;
+  border-radius: 10px;
+  max-width: 400px;
+  display: flex;
+  justify-content: space-between;
+}
