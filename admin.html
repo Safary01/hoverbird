@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>HoverBird Admin</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #87CEEB;
+      text-align: center;
+      padding: 20px;
+    }
+
+    .panel {
+      max-width: 500px;
+      margin: auto;
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+    }
+
+    h1 {
+      margin-top: 0;
+    }
+
+    button {
+      padding: 12px 20px;
+      font-size: 16px;
+      margin: 10px;
+      cursor: pointer;
+    }
+
+    #status {
+      margin-top: 15px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="panel">
+
+  <h1>🏆 HoverBird Admin</h1>
+
+  <p id="season">Loading season...</p>
+
+  <button id="archiveBtn">
+    Archive Current Season
+  </button>
+
+  <br>
+
+  <button onclick="goDashboard()">
+    Dashboard
+  </button>
+
+  <div id="status"></div>
+
+</div>
+
+<script type="module">
+
+import { auth } from "./js/firebase-config.js";
+
+import {
+  onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js";
+
+const ADMIN_EMAIL =
+  "uthmanibraheem47@gmail.com";
+
+const seasonText =
+  document.getElementById("season");
+
+const statusText =
+  document.getElementById("status");
+
+function getCurrentSeason() {
+
+  const now = new Date();
+
+  const year = now.getFullYear();
+
+  const month =
+    String(now.getMonth() + 1).padStart(2, "0");
+
+  return `${year}-${month}`;
+}
+
+// Check admin access
+
+onAuthStateChanged(auth, async (user) => {
+
+  if (!user) {
+    window.location.href = "login.html";
+    return;
+  }
+
+  await user.reload();
+
+  if (!user.emailVerified) {
+    window.location.href = "login.html";
+    return;
+  }
+
+  if (user.email !== ADMIN_EMAIL) {
+
+    alert("Access denied.");
+
+    window.location.href =
+      "dashboard.html";
+
+    return;
+  }
+
+  seasonText.innerText =
+    "Current Season: " +
+    getCurrentSeason();
+
+});
+
+// Placeholder button
+
+document
+  .getElementById("archiveBtn")
+  .addEventListener("click", () => {
+
+    statusText.innerText =
+      "Archive feature coming next.";
+
+  });
+
+// Dashboard button
+
+window.goDashboard = function () {
+
+  window.location.href =
+    "dashboard.html";
+
+};
+
+</script>
+
+</body>
+</html>
