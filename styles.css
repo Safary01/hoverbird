@@ -16,6 +16,36 @@ h2 {
   font-size: 28px;
 }
 
+.dashboard-cards {
+  max-width: 400px;
+  margin: 20px auto;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  padding: 0 15px;
+}
+
+.info-card {
+  background: white;
+  border-radius: 15px;
+  padding: 18px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.info-card h3 {
+  margin: 0 0 10px;
+  font-size: 16px;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.info-card p {
+  margin: 0;
+  font-size: 22px;
+  font-weight: bold;
+  color: #222;
+}
 /* Buttons */
 button {
   padding: 12px 18px;
