@@ -119,6 +119,7 @@ let bestScore = 0;
 const birdImage = new Image();
 birdImage.src = "assets/images/bird.png";
 
+
 const bird = {
   x: 120,
   y: 320,
@@ -128,6 +129,18 @@ const bird = {
   width: 40,
   height: 40
 };
+
+// ---------------- SOUNDS ----------------
+
+const flapSound = new Audio("assets/audio/flap.mp3");
+const scoreSound = new Audio("assets/audio/score.mp3");
+const gameOverSound = new Audio("assets/audio/game-over.mp3");
+const bestScoreSound = new Audio("assets/audio/best-score.mp3");
+
+function playSound(sound) {
+  sound.currentTime = 0;
+  sound.play().catch(() => {});
+}
 
 // ---------------- PIPES ----------------
 
@@ -180,6 +193,8 @@ function flap() {
 
   if (!gameStarted) startGame();
 
+  playSound(flapSound);
+
   bird.velocity = bird.flapPower;
 }
 
@@ -224,6 +239,8 @@ async function endGame() {
   if (gameOver) return;
 
   gameOver = true;
+  
+  playSound(gameOverSound);
 
   if (pipeTimer) clearInterval(pipeTimer);
 
@@ -255,13 +272,16 @@ async function endGame() {
         }
       }
 
-      if (score > (data.bestScore || 0)) {
-        await updateDoc(ref, {
-          bestScore: score
-        });
-        isNewBest = true;
-      }
+     if (score > (data.bestScore || 0)) {
 
+  await updateDoc(ref, {
+    bestScore: score
+  });
+
+  isNewBest = true;
+
+  playSound(bestScoreSound);
+}
     } else {
 
       await setDoc(ref, {
@@ -304,9 +324,12 @@ function update() {
     pipe.x -= PIPE_SPEED;
 
     if (!pipe.passed && pipe.x + PIPE_WIDTH < bird.x) {
-      pipe.passed = true;
-      score++;
-    }
+
+  pipe.passed = true;
+  score++;
+
+  playSound(scoreSound);
+}
 
     if (pipe.x + PIPE_WIDTH < 0) {
       pipes.splice(i, 1);
