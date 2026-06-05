@@ -148,6 +148,15 @@ function playSound(sound) {
   sound.play().catch(() => {});
 }
 
+  // ---------------- CLOUDS ----------------
+
+const clouds = [
+  { x: 50, y: 80, speed: 0.3 },
+  { x: 220, y: 150, speed: 0.2 },
+  { x: 120, y: 250, speed: 0.4 },
+  { x: 300, y: 120, speed: 0.25 }
+];
+
 // ---------------- PIPES ----------------
 
 const pipes = [];
@@ -366,6 +375,25 @@ function update() {
 function draw() {
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Draw moving clouds
+
+  for (const cloud of clouds) {
+
+    cloud.x -= cloud.speed;
+
+    if (cloud.x < -80) {
+      cloud.x = canvas.width + 80;
+    }
+
+    ctx.fillStyle = "rgba(255,255,255,0.85)";
+
+    ctx.beginPath();
+    ctx.arc(cloud.x, cloud.y, 18, 0, Math.PI * 2);
+    ctx.arc(cloud.x + 20, cloud.y - 10, 22, 0, Math.PI * 2);
+    ctx.arc(cloud.x + 42, cloud.y, 18, 0, Math.PI * 2);
+    ctx.fill();
+  }
 
   ctx.fillStyle = "green";
 
