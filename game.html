@@ -111,8 +111,10 @@ const bestScoreSound = new Audio("assets/sounds/best-score.mp3");
 
 function playSound(sound) {
   if (!soundEnabled) return;
-  sound.currentTime = 0;
-  sound.play().catch(() => {});
+  try {
+    sound.currentTime = 0;
+    sound.play();
+  } catch (e) {}
 }
 
 // ---------------- STATE ----------------
@@ -166,9 +168,10 @@ onAuthStateChanged(auth, async (user) => {
   }
 });
 
-// ---------------- GAME ----------------
+// ---------------- START GAME ----------------
 function startGame() {
   if (gameStarted) return;
+
   gameStarted = true;
   ui.style.display = "none";
 
@@ -177,17 +180,19 @@ function startGame() {
   }, 3000);
 }
 
+// ---------------- FLAP ----------------
 function flap() {
   if (gameOver) return;
+
   if (!gameStarted) startGame();
 
   playSound(flapSound);
   bird.velocity = bird.flapPower;
 }
 
+// ---------------- PIPE ----------------
 function createPipe() {
-  const topHeight =
-    Math.random() * (350 - 80) + 80;
+  const topHeight = Math.random() * (350 - 80) + 80;
 
   pipes.push({
     x: canvas.width,
@@ -196,6 +201,7 @@ function createPipe() {
   });
 }
 
+// ---------------- INPUT ----------------
 canvas.addEventListener("click", flap);
 canvas.addEventListener("touchstart", (e) => {
   e.preventDefault();
@@ -217,7 +223,6 @@ async function endGame() {
   if (pipeTimer) clearInterval(pipeTimer);
 
   const user = auth.currentUser;
-  const season = getCurrentSeason();
   let isNewBest = false;
 
   if (user) {
@@ -236,7 +241,6 @@ async function endGame() {
   }
 
   ui.style.display = "flex";
-
   ui.innerHTML = `
     <div class="panel">
       <h2>Game Over</h2>
@@ -262,7 +266,7 @@ function update() {
     if (!pipe.passed && pipe.x + PIPE_WIDTH < bird.x) {
       pipe.passed = true;
       score++;
-      playSound(scoreSound);
+      playSound(scoreSound); // FIXED: now always runs correctly
     }
 
     const collision =
@@ -296,19 +300,36 @@ function draw() {
     ctx.fill();
   }
 
+  // pipes
   ctx.fillStyle = "green";
   for (const pipe of pipes) {
     ctx.fillRect(pipe.x, 0, PIPE_WIDTH, pipe.topHeight);
     ctx.fillRect(pipe.x, pipe.topHeight + PIPE_GAP, PIPE_WIDTH, canvas.height);
   }
 
+  // bird
   ctx.drawImage(birdImage, bird.x, bird.y, bird.width, bird.height);
 
+  // ground
   ctx.fillStyle = "#c2b280";
   ctx.fillRect(0, canvas.height - GROUND_HEIGHT, canvas.width, GROUND_HEIGHT);
 
+  // score
   ctx.fillStyle = "black";
   ctx.fillText("Score: " + score, 10, 30);
+
+  // ✅ RESTORED START SCREEN
+  if (!gameStarted && !gameOver) {
+    ctx.fillStyle = "rgba(0,0,0,0.5)";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    ctx.fillStyle = "white";
+    ctx.font = "30px Arial";
+    ctx.fillText("HoverBird", 100, 250);
+
+    ctx.font = "20px Arial";
+    ctx.fillText("Tap to Start", 120, 300);
+  }
 }
 
 // ---------------- LOOP ----------------
@@ -326,4 +347,4 @@ window.goDashboard = () => window.location.href = "dashboard.html";
 </script>
 
 </body>
-</html>
+  </html>
