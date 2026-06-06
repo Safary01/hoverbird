@@ -25,9 +25,15 @@
     <p id="score">Best Score: ...</p>
   </div>
 
-  <button onclick="goToGame()">Play HoverBird</button>
-  <button onclick="goToLeaderboard()">Leaderboard</button>
-  <button onclick="logout()">Logout</button>
+  <button onclick="goToGame()">🎮 Play HoverBird</button>
+
+<button onclick="goToLeaderboard()">🏆 Leaderboard</button>
+
+<button onclick="goToHowToPlay()">📖 How To Play</button>
+
+<button onclick="goToPrivacyPolicy()">🔒 Privacy Policy</button>
+
+<button onclick="logout()">🚪 Logout</button>
 
 </div>
 
@@ -131,6 +137,13 @@ window.goToGame = function () {
 
 window.goToLeaderboard = function () {
   window.location.href = "leaderboard.html";
+};
+    window.goToHowToPlay = function () {
+  window.location.href = "how-to-play.html";
+};
+
+window.goToPrivacyPolicy = function () {
+  window.location.href = "privacy-policy.html";
 };
 
 // ---------------- LOGOUT ----------------
