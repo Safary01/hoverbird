@@ -5,167 +5,169 @@
   <link rel="stylesheet" href="styles.css">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
+
 <body>
 
   <div class="clouds">
-  <div class="cloud cloud1"></div>
-  <div class="cloud cloud2"></div>
-  <div class="cloud cloud3"></div>
-</div>
-  
+    <div class="cloud cloud1"></div>
+    <div class="cloud cloud2"></div>
+    <div class="cloud cloud3"></div>
+  </div>
+
   <div class="dashboard-container">
 
-  <h2>Dashboard</h2>
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
+      <h2 style="margin:0;">Dashboard</h2>
 
-  <div class="card">
-    <p id="welcome">Loading user...</p>
+      <!-- 🔊 SOUND TOGGLE -->
+      <button id="soundToggle" style="padding:8px 12px;font-size:14px;">
+        🔊
+      </button>
+    </div>
+
+    <div class="card">
+      <p id="welcome">Loading user...</p>
+    </div>
+
+    <div class="card">
+      <p id="score">Best Score: ...</p>
+    </div>
+
+    <button onclick="goToGame()">🎮 Play HoverBird</button>
+    <button onclick="goToLeaderboard()">🏆 Leaderboard</button>
+    <button onclick="goToHowToPlay()">📖 How To Play</button>
+    <button onclick="goToPrivacyPolicy()">🔒 Privacy Policy</button>
+    <button onclick="logout()">🚪 Logout</button>
+
   </div>
 
-  <div class="card">
-    <p id="score">Best Score: ...</p>
-  </div>
+  <!-- 🌤 Background Music -->
+  <audio id="bgMusic" autoplay loop>
+    <source src="assets/sounds/background.mp3" type="audio/mpeg">
+  </audio>
 
-  <button onclick="goToGame()">🎮 Play HoverBird</button>
-
-<button onclick="goToLeaderboard()">🏆 Leaderboard</button>
-
-<button onclick="goToHowToPlay()">📖 How To Play</button>
-
-<button onclick="goToPrivacyPolicy()">🔒 Privacy Policy</button>
-
-<button onclick="logout()">🚪 Logout</button>
-
-</div>
-
+  <!-- ══════════════════════════════════════
+       FIREBASE + DASHBOARD LOGIC
+  ══════════════════════════════════════ -->
   <script type="module">
-import { auth, db } from "./js/firebase-config.js";
+    import { auth, db } from "./js/firebase-config.js";
 
-import {
-  onAuthStateChanged,
-  signOut
-} from "https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js";
+    import {
+      onAuthStateChanged,
+      signOut
+    } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js";
 
-import {
-  doc,
-  getDoc,
-  updateDoc
-} from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
+    import {
+      doc,
+      getDoc,
+      updateDoc
+    } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 
-const welcome = document.getElementById("welcome");
-const scoreText = document.getElementById("score");
+    const welcome = document.getElementById("welcome");
+    const scoreText = document.getElementById("score");
 
-let currentUser = null;
+    let currentUser = null;
 
-// ---------------- SEASON ----------------
-
-function getCurrentSeason() {
-
-  const now = new Date();
-
-  const year = now.getFullYear();
-
-  const month =
-    String(now.getMonth() + 1).padStart(2, "0");
-
-  return `${year}-${month}`;
-}
-
-// ---------------- AUTH ----------------
-
-onAuthStateChanged(auth, async (user) => {
-
-  if (!user) {
-    window.location.href = "login.html";
-    return;
-  }
-
-  await user.reload();
-
-  if (!user.emailVerified) {
-    window.location.href = "login.html";
-    return;
-  }
-
-  currentUser = user;
-
-  const userRef = doc(db, "users", user.uid);
-  const userSnap = await getDoc(userRef);
-
-  if (userSnap.exists()) {
-
-    const data = userSnap.data();
-
-    const currentSeason =
-      getCurrentSeason();
-
-    // Automatic monthly reset
-    if (data.season !== currentSeason) {
-
-      await updateDoc(userRef, {
-        season: currentSeason,
-        seasonScore: 0
-      });
-
-      data.season = currentSeason;
-      data.seasonScore = 0;
+    function getCurrentSeason() {
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, "0");
+      return `${year}-${month}`;
     }
 
-    welcome.innerText =
-      "Welcome, " +
-      (data.username || "Player");
+    onAuthStateChanged(auth, async (user) => {
 
-    scoreText.innerText =
-      "Best Score: " +
-      (data.bestScore || 0);
+      if (!user) {
+        window.location.href = "login.html";
+        return;
+      }
 
-  } else {
+      await user.reload();
 
-    welcome.innerText =
-      "Welcome, Player";
+      if (!user.emailVerified) {
+        window.location.href = "login.html";
+        return;
+      }
 
-    scoreText.innerText =
-      "Best Score: 0";
-  }
+      currentUser = user;
 
-});
+      const userRef = doc(db, "users", user.uid);
+      const userSnap = await getDoc(userRef);
 
-// ---------------- NAVIGATION ----------------
+      if (userSnap.exists()) {
 
-window.goToGame = function () {
-  window.location.href = "game.html";
-};
+        const data = userSnap.data();
 
-window.goToLeaderboard = function () {
-  window.location.href = "leaderboard.html";
-};
-    window.goToHowToPlay = function () {
-  window.location.href = "how-to-play.html";
-};
+        const currentSeason = getCurrentSeason();
 
-window.goToPrivacyPolicy = function () {
-  window.location.href = "privacy-policy.html";
-};
+        if (data.season !== currentSeason) {
+          await updateDoc(userRef, {
+            season: currentSeason,
+            seasonScore: 0
+          });
 
-// ---------------- LOGOUT ----------------
+          data.season = currentSeason;
+          data.seasonScore = 0;
+        }
 
-window.logout = function () {
+        welcome.innerText = "Welcome, " + (data.username || "Player");
+        scoreText.innerText = "Best Score: " + (data.bestScore || 0);
 
-  signOut(auth);
+      } else {
+        welcome.innerText = "Welcome, Player";
+        scoreText.innerText = "Best Score: 0";
+      }
 
-  window.location.href =
-    "login.html";
-};
+    });
 
-</script>
-  
-<audio id="bgMusic" autoplay loop>
-  <source src="assets/sounds/background.mp3" type="audio/mpeg">
-</audio>
+    window.goToGame = () => window.location.href = "game.html";
+    window.goToLeaderboard = () => window.location.href = "leaderboard.html";
+    window.goToHowToPlay = () => window.location.href = "how-to-play.html";
+    window.goToPrivacyPolicy = () => window.location.href = "privacy-policy.html";
 
-<script>
-const bgMusic = document.getElementById("bgMusic");
-bgMusic.volume = 0.2;
-</script>
-  
+    window.logout = function () {
+      signOut(auth);
+      window.location.href = "login.html";
+    };
+  </script>
+
+  <!-- ══════════════════════════════════════
+       SOUND SYSTEM (GLOBAL DASHBOARD CONTROL)
+  ══════════════════════════════════════ -->
+  <script>
+    const bgMusic = document.getElementById("bgMusic");
+    const soundToggle = document.getElementById("soundToggle");
+
+    let soundEnabled =
+      localStorage.getItem("soundEnabled") !== "false";
+
+    bgMusic.volume = 0.2;
+
+    function updateButton() {
+      soundToggle.textContent = soundEnabled ? "🔊" : "🔇";
+    }
+
+    updateButton();
+
+    if (soundEnabled) {
+      bgMusic.play().catch(() => {});
+    }
+
+    soundToggle.addEventListener("click", () => {
+
+      soundEnabled = !soundEnabled;
+
+      localStorage.setItem("soundEnabled", soundEnabled);
+
+      if (soundEnabled) {
+        bgMusic.play().catch(() => {});
+      } else {
+        bgMusic.pause();
+      }
+
+      updateButton();
+    });
+  </script>
+
 </body>
 </html>
