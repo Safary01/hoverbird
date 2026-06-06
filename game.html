@@ -104,17 +104,27 @@ soundToggle.onclick = () => {
 };
 
 // ---------------- SOUNDS ----------------
-const flapSound = new Audio("assets/sounds/flap.mp3");
 const scoreSound = new Audio("assets/sounds/score.mp3");
 const gameOverSound = new Audio("assets/sounds/game-over.mp3");
 const bestScoreSound = new Audio("assets/sounds/best-score.mp3");
 
+scoreSound.preload = "auto";
+gameOverSound.preload = "auto";
+bestScoreSound.preload = "auto";
+
+function playScoreSound() {
+  if (!soundEnabled) return;
+
+  const s = scoreSound.cloneNode();
+  s.volume = 1;
+  s.play().catch(() => {});
+}
+
 function playSound(sound) {
   if (!soundEnabled) return;
-  try {
-    sound.currentTime = 0;
-    sound.play();
-  } catch (e) {}
+
+  sound.currentTime = 0;
+  sound.play().catch(() => {});
 }
 
 // ---------------- STATE ----------------
@@ -186,7 +196,6 @@ function flap() {
 
   if (!gameStarted) startGame();
 
-  playSound(flapSound);
   bird.velocity = bird.flapPower;
 }
 
@@ -266,7 +275,7 @@ function update() {
     if (!pipe.passed && pipe.x + PIPE_WIDTH < bird.x) {
       pipe.passed = true;
       score++;
-      playSound(scoreSound); // FIXED: now always runs correctly
+      playScoreSound(); // FIXED: now always runs correctly
     }
 
     const collision =
