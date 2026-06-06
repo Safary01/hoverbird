@@ -27,7 +27,6 @@
     border: 2px solid #333;
   }
 
-  /* Game Over Overlay */
   #ui {
     position: fixed;
     top: 0;
@@ -41,7 +40,6 @@
     z-index: 1000;
   }
 
-  /* Popup Panel */
   #ui .panel {
     background: white;
     padding: 20px;
@@ -49,16 +47,6 @@
     text-align: center;
     width: 90%;
     max-width: 300px;
-    box-sizing: border-box;
-  }
-
-  #ui h2 {
-    margin-top: 0;
-  }
-
-  #ui p {
-    font-size: 18px;
-    margin: 15px 0;
   }
 
   button {
@@ -70,61 +58,73 @@
     border-radius: 6px;
   }
 
-  button:hover {
-    opacity: 0.9;
+  #soundToggle {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 2000;
+    font-size: 16px;
   }
 </style>
 </head>
 
 <body>
 
-<div class="clouds">
-  <div class="cloud cloud1"></div>
-  <div class="cloud cloud2"></div>
-  <div class="cloud cloud3"></div>
-</div>
-  
 <h2>HoverBird</h2>
 
-<canvas id="gameCanvas" width="360" height="640"></canvas>
+<button id="soundToggle">🔊</button>
 
+<canvas id="gameCanvas" width="360" height="640"></canvas>
 <div id="ui"></div>
 
 <script type="module">
 
 import { auth, db } from "./js/firebase-config.js";
-
-import {
-  onAuthStateChanged
-} from "https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js";
-
-import {
-  doc,
-  getDoc,
-  setDoc,
-  updateDoc
-} from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
-
-// ---------------- DOM ----------------
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js";
+import { doc, getDoc, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 const ui = document.getElementById("ui");
 
-// ---------------- STATE ----------------
+// ---------------- SOUND STATE ----------------
+let soundEnabled = localStorage.getItem("soundEnabled") !== "false";
 
+const soundToggle = document.getElementById("soundToggle");
+
+function updateSoundIcon() {
+  soundToggle.textContent = soundEnabled ? "🔊" : "🔇";
+}
+updateSoundIcon();
+
+soundToggle.onclick = () => {
+  soundEnabled = !soundEnabled;
+  localStorage.setItem("soundEnabled", soundEnabled);
+  updateSoundIcon();
+};
+
+// ---------------- SOUNDS ----------------
+const flapSound = new Audio("assets/sounds/flap.mp3");
+const scoreSound = new Audio("assets/sounds/score.mp3");
+const gameOverSound = new Audio("assets/sounds/game-over.mp3");
+const bestScoreSound = new Audio("assets/sounds/best-score.mp3");
+
+function playSound(sound) {
+  if (!soundEnabled) return;
+  sound.currentTime = 0;
+  sound.play().catch(() => {});
+}
+
+// ---------------- STATE ----------------
 let gameStarted = false;
 let gameOver = false;
 let score = 0;
 let pipeTimer = null;
-let currentUser = null;
 let bestScore = 0;
 
 // ---------------- BIRD ----------------
-
 const birdImage = new Image();
 birdImage.src = "assets/images/bird.png";
-
 
 const bird = {
   x: 120,
@@ -136,20 +136,7 @@ const bird = {
   height: 40
 };
 
-// ---------------- SOUNDS ----------------
-
-const flapSound = new Audio("assets/sounds/flapp.mp3");
-const scoreSound = new Audio("assets/sounds/score.mp3");
-const gameOverSound = new Audio("assets/sounds/game-over.mp3");
-const bestScoreSound = new Audio("assets/sounds/best-score.mp3");
-
-function playSound(sound) {
-  sound.currentTime = 0;
-  sound.play().catch(() => {});
-}
-
-  // ---------------- CLOUDS ----------------
-
+// ---------------- CLOUDS ----------------
 const clouds = [
   { x: 50, y: 80, speed: 0.3 },
   { x: 220, y: 150, speed: 0.2 },
@@ -158,71 +145,49 @@ const clouds = [
 ];
 
 // ---------------- PIPES ----------------
-
 const pipes = [];
-
 const PIPE_WIDTH = 60;
 const PIPE_GAP = 200;
 const PIPE_SPEED = 1.5;
 const GROUND_HEIGHT = 60;
 
 // ---------------- AUTH ----------------
-
 onAuthStateChanged(auth, async (user) => {
-
   if (!user) {
     window.location.href = "login.html";
     return;
   }
 
-  currentUser = user;
+  const ref = doc(db, "users", user.uid);
+  const snap = await getDoc(ref);
 
-  const userRef = doc(db, "users", user.uid);
-  const userSnap = await getDoc(userRef);
-
-  if (userSnap.exists()) {
-    bestScore = userSnap.data().bestScore || 0;
+  if (snap.exists()) {
+    bestScore = snap.data().bestScore || 0;
   }
 });
 
-// ---------------- START GAME ----------------
-
+// ---------------- GAME ----------------
 function startGame() {
-
   if (gameStarted) return;
-
   gameStarted = true;
   ui.style.display = "none";
-  ui.innerHTML = "";
 
   pipeTimer = setInterval(() => {
     if (!gameOver) createPipe();
   }, 3000);
 }
 
-// ---------------- FLAP ----------------
-
 function flap() {
-
   if (gameOver) return;
-
   if (!gameStarted) startGame();
 
   playSound(flapSound);
-
   bird.velocity = bird.flapPower;
 }
 
-// ---------------- PIPE ----------------
-
 function createPipe() {
-
-  const minTopHeight = 80;
-  const maxTopHeight = 350;
-
   const topHeight =
-    Math.random() * (maxTopHeight - minTopHeight) +
-    minTopHeight;
+    Math.random() * (350 - 80) + 80;
 
   pipes.push({
     x: canvas.width,
@@ -231,81 +196,42 @@ function createPipe() {
   });
 }
 
-// ---------------- INPUT ----------------
-
 canvas.addEventListener("click", flap);
-
 canvas.addEventListener("touchstart", (e) => {
   e.preventDefault();
   flap();
 });
 
 // ---------------- END GAME ----------------
-
 function getCurrentSeason() {
   const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, "0");
-  return `${year}-${month}`;
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
 }
 
 async function endGame() {
-
   if (gameOver) return;
 
   gameOver = true;
-  
   playSound(gameOverSound);
 
   if (pipeTimer) clearInterval(pipeTimer);
 
   const user = auth.currentUser;
   const season = getCurrentSeason();
-
   let isNewBest = false;
 
   if (user) {
-
     const ref = doc(db, "users", user.uid);
     const snap = await getDoc(ref);
 
     if (snap.exists()) {
-
       const data = snap.data();
 
-      if (data.season !== season) {
-        await updateDoc(ref, {
-          season,
-          seasonScore: score
-        });
-      } else {
-        const currentSeasonScore = data.seasonScore || 0;
-        if (score > currentSeasonScore) {
-          await updateDoc(ref, {
-            seasonScore: score
-          });
-        }
+      if (score > (data.bestScore || 0)) {
+        await updateDoc(ref, { bestScore: score });
+        isNewBest = true;
+        playSound(bestScoreSound);
       }
-
-     if (score > (data.bestScore || 0)) {
-
-  await updateDoc(ref, {
-    bestScore: score
-  });
-
-  isNewBest = true;
-
-  playSound(bestScoreSound);
-}
-    } else {
-
-      await setDoc(ref, {
-        username: "Player",
-        season,
-        seasonScore: score,
-        bestScore: score,
-        createdAt: Date.now()
-      });
     }
   }
 
@@ -315,7 +241,6 @@ async function endGame() {
     <div class="panel">
       <h2>Game Over</h2>
       <p>Score: ${score}</p>
-      <p>Season: ${season}</p>
       ${isNewBest ? "<p>🎉 New Best Score!</p>" : ""}
       <button onclick="restartGame()">Play Again</button>
       <button onclick="goDashboard()">Dashboard</button>
@@ -324,45 +249,29 @@ async function endGame() {
 }
 
 // ---------------- UPDATE ----------------
-
 function update() {
-
   if (!gameStarted || gameOver) return;
 
   bird.velocity += bird.gravity;
   bird.y += bird.velocity;
 
   for (let i = pipes.length - 1; i >= 0; i--) {
-
     const pipe = pipes[i];
-
     pipe.x -= PIPE_SPEED;
 
     if (!pipe.passed && pipe.x + PIPE_WIDTH < bird.x) {
-
-  pipe.passed = true;
-  score++;
-
-  playSound(scoreSound);
-}
-
-    if (pipe.x + PIPE_WIDTH < 0) {
-      pipes.splice(i, 1);
-      continue;
+      pipe.passed = true;
+      score++;
+      playSound(scoreSound);
     }
 
     const collision =
       bird.x + bird.width > pipe.x &&
       bird.x < pipe.x + PIPE_WIDTH &&
-      (
-        bird.y < pipe.topHeight ||
-        bird.y + bird.height > pipe.topHeight + PIPE_GAP
-      );
+      (bird.y < pipe.topHeight ||
+        bird.y + bird.height > pipe.topHeight + PIPE_GAP);
 
-    if (collision) {
-      endGame();
-      return;
-    }
+    if (collision) endGame();
   }
 
   if (bird.y > canvas.height - GROUND_HEIGHT - bird.height) {
@@ -371,23 +280,15 @@ function update() {
 }
 
 // ---------------- DRAW ----------------
-
 function draw() {
-
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // Draw moving clouds
-
+  // clouds
   for (const cloud of clouds) {
-
     cloud.x -= cloud.speed;
-
-    if (cloud.x < -80) {
-      cloud.x = canvas.width + 80;
-    }
+    if (cloud.x < -80) cloud.x = canvas.width + 80;
 
     ctx.fillStyle = "rgba(255,255,255,0.85)";
-
     ctx.beginPath();
     ctx.arc(cloud.x, cloud.y, 18, 0, Math.PI * 2);
     ctx.arc(cloud.x + 20, cloud.y - 10, 22, 0, Math.PI * 2);
@@ -396,77 +297,31 @@ function draw() {
   }
 
   ctx.fillStyle = "green";
-
   for (const pipe of pipes) {
-
     ctx.fillRect(pipe.x, 0, PIPE_WIDTH, pipe.topHeight);
-
-    ctx.fillRect(
-      pipe.x,
-      pipe.topHeight + PIPE_GAP,
-      PIPE_WIDTH,
-      canvas.height
-    );
+    ctx.fillRect(pipe.x, pipe.topHeight + PIPE_GAP, PIPE_WIDTH, canvas.height);
   }
 
-  if (birdImage.complete) {
-    ctx.drawImage(
-      birdImage,
-      bird.x,
-      bird.y,
-      bird.width,
-      bird.height
-    );
-  }
+  ctx.drawImage(birdImage, bird.x, bird.y, bird.width, bird.height);
 
   ctx.fillStyle = "#c2b280";
-
-  ctx.fillRect(
-    0,
-    canvas.height - GROUND_HEIGHT,
-    canvas.width,
-    GROUND_HEIGHT
-  );
+  ctx.fillRect(0, canvas.height - GROUND_HEIGHT, canvas.width, GROUND_HEIGHT);
 
   ctx.fillStyle = "black";
-  ctx.font = "20px Arial";
   ctx.fillText("Score: " + score, 10, 30);
-
-  if (!gameStarted) {
-
-    ctx.fillStyle = "rgba(0,0,0,0.5)";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    ctx.fillStyle = "white";
-    ctx.font = "30px Arial";
-    ctx.fillText("HoverBird", 100, 250);
-
-    ctx.font = "20px Arial";
-    ctx.fillText("Tap to Start", 120, 300);
-  }
 }
 
 // ---------------- LOOP ----------------
-
-function gameLoop() {
+function loop() {
   update();
   draw();
-  requestAnimationFrame(gameLoop);
+  requestAnimationFrame(loop);
 }
 
-// ---------------- BUTTONS ----------------
+birdImage.onload = () => loop();
 
 window.restartGame = () => location.reload();
-
-window.goDashboard = () => {
-  window.location.href = "dashboard.html";
-};
-
-// ---------------- START ----------------
-
-birdImage.onload = () => {
-  gameLoop();
-};
+window.goDashboard = () => window.location.href = "dashboard.html";
 
 </script>
 
