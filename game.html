@@ -65,6 +65,14 @@
     z-index: 2000;
     font-size: 16px;
   }
+
+  #pauseToggle {
+    position: absolute;
+    top: 10px;
+    right: 70px;
+    z-index: 2000;
+    font-size: 16px;
+  }
 </style>
 </head>
 
@@ -73,6 +81,7 @@
 <h2>HoverBird</h2>
 
 <button id="soundToggle">🔊</button>
+<button id="pauseToggle">⏸️</button>
 
 <canvas id="gameCanvas" width="360" height="640"></canvas>
 <div id="ui"></div>
@@ -81,7 +90,7 @@
 
 import { auth, db } from "./js/firebase-config.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js";
-import { doc, getDoc, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
+import { doc, getDoc, updateDoc, setDoc } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
@@ -103,28 +112,56 @@ soundToggle.onclick = () => {
   updateSoundIcon();
 };
 
+// ---------------- PAUSE ----------------
+let gamePaused = false;
+const pauseToggle = document.getElementById("pauseToggle");
+
+function updatePauseIcon() {
+  pauseToggle.textContent = gamePaused ? "▶️" : "⏸️";
+}
+updatePauseIcon();
+
+pauseToggle.onclick = () => {
+  if (!gameStarted || gameOver) return;
+
+  gamePaused = !gamePaused;
+  updatePauseIcon();
+
+  if (gamePaused) {
+    ui.style.display = "flex";
+    ui.innerHTML = `
+      <div class="panel">
+        <h2>Paused</h2>
+        <button onclick="resumeGame()">Resume</button>
+      </div>
+    `;
+  } else {
+    ui.style.display = "none";
+  }
+};
+
+window.resumeGame = () => {
+  gamePaused = false;
+  updatePauseIcon();
+  ui.style.display = "none";
+};
+
 // ---------------- SOUNDS ----------------
 const scoreSound = new Audio("assets/sounds/score.mp3");
 const gameOverSound = new Audio("assets/sounds/game-over.mp3");
 const bestScoreSound = new Audio("assets/sounds/best-score.mp3");
 
-scoreSound.preload = "auto";
-gameOverSound.preload = "auto";
-bestScoreSound.preload = "auto";
-
-function playScoreSound() {
-  if (!soundEnabled) return;
-
-  const s = scoreSound.cloneNode();
-  s.volume = 1;
-  s.play().catch(() => {});
-}
-
 function playSound(sound) {
   if (!soundEnabled) return;
-
   sound.currentTime = 0;
   sound.play().catch(() => {});
+}
+
+// FIX: more reliable score sound
+function playScoreSound() {
+  if (!soundEnabled) return;
+  const s = scoreSound.cloneNode();
+  s.play().catch(() => {});
 }
 
 // ---------------- STATE ----------------
@@ -186,13 +223,13 @@ function startGame() {
   ui.style.display = "none";
 
   pipeTimer = setInterval(() => {
-    if (!gameOver) createPipe();
+    if (!gameOver && !gamePaused) createPipe();
   }, 3000);
 }
 
 // ---------------- FLAP ----------------
 function flap() {
-  if (gameOver) return;
+  if (gameOver || gamePaused) return;
 
   if (!gameStarted) startGame();
 
@@ -263,7 +300,7 @@ async function endGame() {
 
 // ---------------- UPDATE ----------------
 function update() {
-  if (!gameStarted || gameOver) return;
+  if (!gameStarted || gameOver || gamePaused) return;
 
   bird.velocity += bird.gravity;
   bird.y += bird.velocity;
@@ -275,7 +312,7 @@ function update() {
     if (!pipe.passed && pipe.x + PIPE_WIDTH < bird.x) {
       pipe.passed = true;
       score++;
-      playScoreSound(); // FIXED: now always runs correctly
+      playScoreSound();
     }
 
     const collision =
@@ -327,7 +364,7 @@ function draw() {
   ctx.fillStyle = "black";
   ctx.fillText("Score: " + score, 10, 30);
 
-  // ✅ RESTORED START SCREEN
+  // start screen
   if (!gameStarted && !gameOver) {
     ctx.fillStyle = "rgba(0,0,0,0.5)";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -338,6 +375,16 @@ function draw() {
 
     ctx.font = "20px Arial";
     ctx.fillText("Tap to Start", 120, 300);
+  }
+
+  // pause overlay
+  if (gamePaused) {
+    ctx.fillStyle = "rgba(0,0,0,0.5)";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    ctx.fillStyle = "white";
+    ctx.font = "30px Arial";
+    ctx.fillText("Paused", 140, 300);
   }
 }
 
@@ -356,4 +403,4 @@ window.goDashboard = () => window.location.href = "dashboard.html";
 </script>
 
 </body>
-  </html>
+</html>
