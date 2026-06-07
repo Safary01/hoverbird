@@ -29,10 +29,7 @@
       font-size: 15px;
       font-weight: bold;
       cursor: pointer;
-    }
-
-    .top-btn:hover {
-      opacity: 0.9;
+      color: white;
     }
 
     h2 {
@@ -85,19 +82,14 @@
 <body>
 
 <div class="top-bar">
-  <button class="top-btn" onclick="goDashboard()">
-    ← Dashboard
-  </button>
-
-  <button class="top-btn" onclick="goHallOfFame()">
-    🏆 Hall of Fame
-  </button>
+  <button class="top-btn" onclick="goDashboard()">← Dashboard</button>
+  <button class="top-btn" onclick="goHallOfFame()">🏆 Hall of Fame</button>
 </div>
 
 <h2>🏆 HoverBird Leaderboard</h2>
 
 <div class="info-text">
-  Top 3 players at the end of each month qualify for rewards.
+  Top players are ranked by their best score.
 </div>
 
 <div class="board" id="board">
@@ -107,53 +99,24 @@
 <script type="module">
 
 import { db } from "./js/firebase-config.js";
-
-import {
-  collection,
-  getDocs
-} from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
+import { collection, getDocs } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 
 const board = document.getElementById("board");
 
-// ---------------- SEASON ----------------
-
-function getCurrentSeason() {
-
-  const now = new Date();
-
-  const year = now.getFullYear();
-
-  const month =
-    String(now.getMonth() + 1).padStart(2, "0");
-
-  return `${year}-${month}`;
-}
-
 // ---------------- LOAD LEADERBOARD ----------------
-
 async function loadLeaderboard() {
 
-  const currentSeason =
-    getCurrentSeason();
-
-  const snapshot =
-    await getDocs(collection(db, "users"));
+  const snapshot = await getDocs(collection(db, "users"));
 
   let users = [];
 
   snapshot.forEach(doc => {
-
     const data = doc.data();
 
-    if (data.season === currentSeason) {
-
-      users.push({
-        name: data.username || "Player",
-        score: data.seasonScore || 0
-      });
-
-    }
-
+    users.push({
+      name: data.username || "Player",
+      score: data.bestScore || 0
+    });
   });
 
   users.sort((a, b) => b.score - a.score);
@@ -161,10 +124,7 @@ async function loadLeaderboard() {
   board.innerHTML = "";
 
   if (users.length === 0) {
-
-    board.innerHTML =
-      "<p>No players this season yet.</p>";
-
+    board.innerHTML = "<p>No players yet.</p>";
     return;
   }
 
@@ -173,39 +133,26 @@ async function loadLeaderboard() {
     const div = document.createElement("div");
     div.className = "player";
 
-    let rankDisplay = `#${index + 1}`;
-
-    if (index === 0) {
-      rankDisplay = "🥇";
-    } else if (index === 1) {
-      rankDisplay = "🥈";
-    } else if (index === 2) {
-      rankDisplay = "🥉";
-    }
+    let rank = `#${index + 1}`;
+    if (index === 0) rank = "🥇";
+    else if (index === 1) rank = "🥈";
+    else if (index === 2) rank = "🥉";
 
     div.innerHTML = `
-      <div class="rank">${rankDisplay}</div>
+      <div class="rank">${rank}</div>
       <div class="name">${user.name}</div>
       <div class="score">${user.score}</div>
     `;
 
     board.appendChild(div);
-
   });
-
 }
 
 loadLeaderboard();
 
-// ---------------- NAVIGATION ----------------
-
-window.goDashboard = function () {
-  window.location.href = "dashboard.html";
-};
-
-window.goHallOfFame = function () {
-  window.location.href = "hall-of-fame.html";
-};
+// ---------------- NAV ----------------
+window.goDashboard = () => window.location.href = "dashboard.html";
+window.goHallOfFame = () => window.location.href = "hall-of-fame.html";
 
 </script>
 
