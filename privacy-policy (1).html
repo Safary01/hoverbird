@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HoverBird — Privacy Policy</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --sky-top:     #0a1628;
+      --sky-mid:     #0d2a5c;
+      --sky-low:     #1a4a8a;
+      --gold:        #f5c842;
+      --teal:        #00d4aa;
+      --teal-dark:   #009977;
+      --white:       #ffffff;
+      --text-soft:   rgba(255,255,255,0.75);
+      --text-muted:  rgba(255,255,255,0.40);
+      --card-bg:     rgba(255,255,255,0.06);
+      --card-border: rgba(255,255,255,0.12);
+    }
+
+    html, body {
+      min-height: 100%;
+      font-family: 'Nunito', sans-serif;
+      background: var(--sky-top);
+      color: var(--white);
+      overflow-x: hidden;
+    }
+
+    .sky {
+      position: fixed; inset: 0;
+      background: linear-gradient(180deg, var(--sky-top) 0%, var(--sky-mid) 55%, var(--sky-low) 100%);
+      z-index: 0;
+    }
+    .stars { position: fixed; inset: 0; z-index: 1; pointer-events: none; }
+    .star {
+      position: absolute; background: #fff; border-radius: 50%;
+      animation: twinkle var(--d,3s) ease-in-out infinite var(--delay,0s); opacity: 0;
+    }
+    @keyframes twinkle { 0%,100%{opacity:0} 50%{opacity:var(--op,0.8)} }
+
+    .ground {
+      position: fixed; bottom: 0; left: 0; right: 0; height: 70px;
+      background: linear-gradient(180deg, #1a5c2a 0%, #0d3a18 100%);
+      z-index: 3; border-top: 3px solid #2a8a3a;
+    }
+    .ground::before {
+      content:''; position:absolute; top:-10px; left:0; right:0; height:10px;
+      background: repeating-linear-gradient(90deg,#2a8a3a 0,#2a8a3a 30px,#1a5c2a 30px,#1a5c2a 60px);
+    }
+
+    /* ── Layout ─────────────────────────────────────────────── */
+    .page {
+      position: relative; z-index: 10;
+      max-width: 680px; margin: 0 auto;
+      padding: 1.5rem 1.25rem 110px;
+      display: flex; flex-direction: column; gap: 1.2rem;
+    }
+
+    /* ── Top bar ────────────────────────────────────────────── */
+    .top-bar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding-top: 0.5rem;
+    }
+    .back-link {
+      display: flex; align-items: center; gap: 0.4rem;
+      color: var(--text-soft); text-decoration: none;
+      font-size: 0.85rem; font-weight: 700; transition: color 0.2s;
+    }
+    .back-link:hover { color: var(--white); }
+    .back-link svg { width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:2.5; stroke-linecap:round; stroke-linejoin:round; }
+    .ndpr-badge {
+      background: rgba(0,212,170,0.12); border: 1px solid rgba(0,212,170,0.25);
+      border-radius: 100px; padding: 0.3rem 0.9rem;
+      font-size: 0.75rem; font-weight: 800; color: var(--teal);
+    }
+
+    /* ── Header ─────────────────────────────────────────────── */
+    .page-header {
+      text-align: center;
+      display: flex; flex-direction: column; align-items: center; gap: 0.5rem;
+      padding: 1rem 0 0.5rem;
+      animation: fadeUp 0.5s cubic-bezier(0.22,1,0.36,1) both;
+    }
+    @keyframes fadeUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+
+    .page-title {
+      font-family: 'Fredoka One', cursive; font-size: 2rem;
+      background: linear-gradient(135deg, var(--gold) 0%, #fff 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .page-meta { font-size: 0.82rem; color: var(--text-muted); font-weight: 700; }
+
+    /* ── Summary card ───────────────────────────────────────── */
+    .summary-card {
+      background: rgba(0,212,170,0.08);
+      border: 1px solid rgba(0,212,170,0.2);
+      border-radius: 18px; padding: 1.2rem 1.3rem;
+      animation: fadeUp 0.5s 0.04s cubic-bezier(0.22,1,0.36,1) both;
+    }
+    .summary-title {
+      font-family: 'Fredoka One', cursive; font-size: 1rem;
+      color: var(--teal); margin-bottom: 0.7rem;
+    }
+    .summary-list { display: flex; flex-direction: column; gap: 0.4rem; }
+    .summary-item {
+      display: flex; align-items: flex-start; gap: 0.6rem;
+      font-size: 0.85rem; font-weight: 700; color: var(--text-soft); line-height: 1.4;
+    }
+    .summary-item span { flex-shrink: 0; }
+
+    /* ── Section ────────────────────────────────────────────── */
+    .policy-section {
+      background: var(--card-bg); border: 1px solid var(--card-border);
+      border-radius: 18px; padding: 1.4rem 1.3rem;
+      backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      animation: fadeUp 0.5s cubic-bezier(0.22,1,0.36,1) both;
+    }
+    .section-title {
+      font-family: 'Fredoka One', cursive; font-size: 1.1rem;
+      color: var(--gold); margin-bottom: 0.75rem;
+      display: flex; align-items: center; gap: 0.5rem;
+    }
+    .section-body {
+      font-size: 0.88rem; color: var(--text-soft); font-weight: 600;
+      line-height: 1.75;
+    }
+    .section-body p + p { margin-top: 0.65rem; }
+    .section-body ul {
+      margin: 0.5rem 0 0.5rem 1.2rem;
+      display: flex; flex-direction: column; gap: 0.3rem;
+    }
+    .section-body li { line-height: 1.5; }
+    .section-body strong { color: var(--white); font-weight: 800; }
+    .section-body a { color: var(--teal); font-weight: 700; }
+
+    /* ── Contact card ───────────────────────────────────────── */
+    .contact-card {
+      background: rgba(245,200,66,0.08); border: 1px solid rgba(245,200,66,0.2);
+      border-radius: 18px; padding: 1.2rem 1.3rem;
+      text-align: center;
+      animation: fadeUp 0.5s 0.1s cubic-bezier(0.22,1,0.36,1) both;
+    }
+    .contact-title {
+      font-family: 'Fredoka One', cursive; font-size: 1rem; color: var(--gold);
+      margin-bottom: 0.4rem;
+    }
+    .contact-text { font-size: 0.85rem; color: var(--text-soft); font-weight: 700; line-height: 1.6; }
+    .contact-text a { color: var(--gold); font-weight: 800; }
+
+    /* ── Footer ─────────────────────────────────────────────── */
+    .footer-nav {
+      display: flex; gap: 1.5rem; flex-wrap: wrap; justify-content: center;
+      padding-top: 0.3rem;
+      animation: fadeUp 0.5s 0.12s cubic-bezier(0.22,1,0.36,1) both;
+    }
+    .footer-link {
+      color: var(--text-muted); text-decoration: none;
+      font-size: 0.78rem; font-weight: 700; transition: color 0.2s;
+    }
+    .footer-link:hover { color: var(--text-soft); }
+  </style>
+</head>
+<body>
+
+  <div class="sky"></div>
+  <div class="stars" id="stars"></div>
+  <div class="ground"></div>
+
+  <main class="page">
+
+    <!-- Top bar -->
+    <div class="top-bar">
+      <a href="index.html" class="back-link">
+        <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+        Home
+      </a>
+      <div class="ndpr-badge">🇳🇬 NDPR Compliant</div>
+    </div>
+
+    <!-- Header -->
+    <div class="page-header">
+      <h1 class="page-title">🔒 Privacy Policy</h1>
+      <p class="page-meta">HoverBird · Last updated: June 2026 · Nigeria</p>
+    </div>
+
+    <!-- Plain-language summary -->
+    <div class="summary-card">
+      <p class="summary-title">📋 Plain English Summary</p>
+      <div class="summary-list">
+        <div class="summary-item"><span>✅</span><span>We collect your username, email, and phone number when you register.</span></div>
+        <div class="summary-item"><span>✅</span><span>We store your game scores to run the leaderboard and Hall of Fame.</span></div>
+        <div class="summary-item"><span>✅</span><span>If you finish top 3 in a season, we may request your bank details to send your reward. These are collected separately and not stored in our main database.</span></div>
+        <div class="summary-item"><span>✅</span><span>We never sell your data to anyone.</span></div>
+        <div class="summary-item"><span>✅</span><span>You can request deletion of your account at any time.</span></div>
+      </div>
+    </div>
+
+    <!-- 1. Who we are -->
+    <div class="policy-section" style="animation-delay:0.04s;">
+      <h2 class="section-title">1. 🏢 Who We Are</h2>
+      <div class="section-body">
+        <p>HoverBird is a competitive browser-based game operated from Nigeria. By creating an account and playing, you agree to this Privacy Policy. If you do not agree, please do not use HoverBird.</p>
+        <p>This policy is written in compliance with the <strong>Nigeria Data Protection Regulation (NDPR) 2019</strong> issued by the National Information Technology Development Agency (NITDA).</p>
+      </div>
+    </div>
+
+    <!-- 2. What we collect -->
+    <div class="policy-section" style="animation-delay:0.06s;">
+      <h2 class="section-title">2. 📦 What Data We Collect</h2>
+      <div class="section-body">
+        <p>When you register and use HoverBird, we collect the following:</p>
+        <ul>
+          <li><strong>Account data:</strong> Username, email address, phone number, and encrypted password.</li>
+          <li><strong>Game data:</strong> Your scores (best score, season score, games played) and leaderboard position.</li>
+          <li><strong>Technical data:</strong> Basic analytics such as page visits, provided by Google Firebase Analytics. This helps us understand how the game is used.</li>
+          <li><strong>Reward data (top 3 players only):</strong> If you qualify for a monthly reward, we may request your bank account name, account number, and bank name. This information is collected privately and used solely for the purpose of sending your reward.</li>
+        </ul>
+        <p>We do <strong>not</strong> collect payment card details, BVN, NIN, passwords in plain text, or any sensitive government identification.</p>
+      </div>
+    </div>
+
+    <!-- 3. Why we collect -->
+    <div class="policy-section" style="animation-delay:0.08s;">
+      <h2 class="section-title">3. 🎯 Why We Collect It</h2>
+      <div class="section-body">
+        <p>We collect and process your data for the following purposes:</p>
+        <ul>
+          <li><strong>Account management:</strong> To create and maintain your player account.</li>
+          <li><strong>Gameplay:</strong> To save your scores, show your rank, and display you on the leaderboard.</li>
+          <li><strong>Hall of Fame:</strong> To permanently record monthly champions by username and score.</li>
+          <li><strong>Rewards:</strong> To send monthly prizes to qualifying top-3 players.</li>
+          <li><strong>Security:</strong> To detect and prevent abuse, cheating, or unauthorised access.</li>
+          <li><strong>Improvement:</strong> To understand how players use the game and improve the experience.</li>
+        </ul>
+        <p>We process your data based on your <strong>consent</strong> (given when you register) and our <strong>legitimate interest</strong> in operating a fair and competitive platform.</p>
+      </div>
+    </div>
+
+    <!-- 4. How we store it -->
+    <div class="policy-section" style="animation-delay:0.10s;">
+      <h2 class="section-title">4. 🗄️ How We Store Your Data</h2>
+      <div class="section-body">
+        <p>Your data is stored using <strong>Google Firebase</strong>, which is a cloud platform operated by Google LLC. Firebase stores data in secure data centres and applies industry-standard encryption.</p>
+        <p>Your password is never stored in plain text. Firebase Authentication handles password security using secure hashing.</p>
+        <p>Bank details submitted for reward purposes are collected through a private, admin-only channel and are deleted after your reward is processed.</p>
+        <p>We retain your account data for as long as your account is active. If you request deletion, we will remove your data within <strong>30 days</strong>.</p>
+      </div>
+    </div>
+
+    <!-- 5. Who can see it -->
+    <div class="policy-section" style="animation-delay:0.12s;">
+      <h2 class="section-title">5. 👁️ Who Can See Your Data</h2>
+      <div class="section-body">
+        <p>The following can see parts of your data:</p>
+        <ul>
+          <li><strong>Other players:</strong> Your username and season score are visible on the leaderboard. Your email and phone number are never shown to other players.</li>
+          <li><strong>HoverBird admin:</strong> Can view all player data for the purpose of managing the game, resolving disputes, and processing rewards.</li>
+          <li><strong>Google Firebase:</strong> As our infrastructure provider, Google processes data according to their own privacy policy and the Google Cloud Data Processing Agreement.</li>
+        </ul>
+        <p>We <strong>do not</strong> sell, rent, or share your personal data with any third-party advertisers or marketing companies.</p>
+      </div>
+    </div>
+
+    <!-- 6. Your rights -->
+    <div class="policy-section" style="animation-delay:0.14s;">
+      <h2 class="section-title">6. ⚖️ Your Rights Under the NDPR</h2>
+      <div class="section-body">
+        <p>Under the Nigeria Data Protection Regulation, you have the right to:</p>
+        <ul>
+          <li><strong>Access:</strong> Request a copy of the data we hold about you.</li>
+          <li><strong>Correction:</strong> Ask us to correct inaccurate data.</li>
+          <li><strong>Deletion:</strong> Request that we delete your account and all associated data.</li>
+          <li><strong>Objection:</strong> Object to how we process your data.</li>
+          <li><strong>Withdrawal of consent:</strong> You may withdraw consent at any time by deleting your account.</li>
+        </ul>
+        <p>To exercise any of these rights, contact us using the details at the bottom of this page. We will respond within <strong>30 days</strong>.</p>
+      </div>
+    </div>
+
+    <!-- 7. Cookies & analytics -->
+    <div class="policy-section" style="animation-delay:0.16s;">
+      <h2 class="section-title">7. 🍪 Cookies & Analytics</h2>
+      <div class="section-body">
+        <p>HoverBird uses <strong>Google Firebase Analytics</strong> to collect anonymous usage data such as page views and session duration. This data does not personally identify you.</p>
+        <p>Firebase may use browser storage (localStorage or cookies) to maintain your login session. These are essential for the game to function and cannot be disabled without affecting your experience.</p>
+        <p>We do not use advertising cookies or track you across other websites.</p>
+      </div>
+    </div>
+
+    <!-- 8. Children -->
+    <div class="policy-section" style="animation-delay:0.18s;">
+      <h2 class="section-title">8. 👦 Children's Privacy</h2>
+      <div class="section-body">
+        <p>HoverBird is intended for players aged <strong>13 and above</strong>. We do not knowingly collect personal data from children under 13. If we become aware that a child under 13 has registered, we will delete that account immediately.</p>
+        <p>If you are a parent or guardian and believe your child has registered, please contact us immediately.</p>
+      </div>
+    </div>
+
+    <!-- 9. Changes -->
+    <div class="policy-section" style="animation-delay:0.20s;">
+      <h2 class="section-title">9. 🔄 Changes to This Policy</h2>
+      <div class="section-body">
+        <p>We may update this Privacy Policy from time to time. When we do, we will update the "Last updated" date at the top of this page. Continued use of HoverBird after changes are posted means you accept the revised policy.</p>
+        <p>For significant changes, we will notify players through the game interface.</p>
+      </div>
+    </div>
+
+    <!-- Contact -->
+    <div class="contact-card">
+      <p class="contact-title">📬 Contact Us</p>
+      <p class="contact-text">
+        For privacy requests, data deletion, or any questions about this policy, contact the HoverBird administrator.<br /><br />
+        You may also contact the <strong>National Information Technology Development Agency (NITDA)</strong> at
+        <a href="https://nitda.gov.ng" target="_blank" rel="noopener">nitda.gov.ng</a> if you believe your data rights have been violated.
+      </p>
+    </div>
+
+    <!-- Footer -->
+    <nav class="footer-nav">
+      <a href="index.html"       class="footer-link">🏠 Home</a>
+      <a href="how-to-play.html" class="footer-link">❓ How to Play</a>
+      <a href="dashboard.html"   class="footer-link">🎮 Dashboard</a>
+    </nav>
+
+  </main>
+
+  <!-- Stars -->
+  <script>
+    const c = document.getElementById("stars");
+    for (let i = 0; i < 60; i++) {
+      const s = document.createElement("div");
+      s.className = "star";
+      const sz = Math.random()*2+0.5;
+      s.style.cssText=`width:${sz}px;height:${sz}px;top:${Math.random()*70}%;left:${Math.random()*100}%;--d:${(Math.random()*3+2).toFixed(1)}s;--delay:-${(Math.random()*4).toFixed(1)}s;--op:${(Math.random()*0.5+0.4).toFixed(2)};`;
+      c.appendChild(s);
+    }
+  </script>
+
+</body>
+</html>

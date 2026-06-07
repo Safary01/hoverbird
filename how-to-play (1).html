@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HoverBird — How to Play</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --sky-top:     #0a1628;
+      --sky-mid:     #0d2a5c;
+      --sky-low:     #1a4a8a;
+      --gold:        #f5c842;
+      --teal:        #00d4aa;
+      --teal-dark:   #009977;
+      --danger:      #ff5a5a;
+      --white:       #ffffff;
+      --text-soft:   rgba(255,255,255,0.72);
+      --text-muted:  rgba(255,255,255,0.38);
+      --card-bg:     rgba(255,255,255,0.06);
+      --card-border: rgba(255,255,255,0.12);
+    }
+
+    html, body {
+      min-height: 100%;
+      font-family: 'Nunito', sans-serif;
+      background: var(--sky-top);
+      color: var(--white);
+      overflow-x: hidden;
+    }
+
+    .sky {
+      position: fixed; inset: 0;
+      background: linear-gradient(180deg, var(--sky-top) 0%, var(--sky-mid) 55%, var(--sky-low) 100%);
+      z-index: 0;
+    }
+    .stars { position: fixed; inset: 0; z-index: 1; pointer-events: none; }
+    .star {
+      position: absolute; background: #fff; border-radius: 50%;
+      animation: twinkle var(--d,3s) ease-in-out infinite var(--delay,0s); opacity: 0;
+    }
+    @keyframes twinkle { 0%,100%{opacity:0} 50%{opacity:var(--op,0.8)} }
+
+    .ground {
+      position: fixed; bottom: 0; left: 0; right: 0; height: 70px;
+      background: linear-gradient(180deg, #1a5c2a 0%, #0d3a18 100%);
+      z-index: 3; border-top: 3px solid #2a8a3a;
+    }
+    .ground::before {
+      content:''; position:absolute; top:-10px; left:0; right:0; height:10px;
+      background: repeating-linear-gradient(90deg,#2a8a3a 0,#2a8a3a 30px,#1a5c2a 30px,#1a5c2a 60px);
+    }
+
+    /* ── Layout ─────────────────────────────────────────────── */
+    .page {
+      position: relative; z-index: 10;
+      max-width: 600px; margin: 0 auto;
+      padding: 1.5rem 1.25rem 110px;
+      display: flex; flex-direction: column; gap: 1.2rem;
+    }
+
+    /* ── Top bar ────────────────────────────────────────────── */
+    .top-bar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding-top: 0.5rem;
+    }
+    .back-link {
+      display: flex; align-items: center; gap: 0.4rem;
+      color: var(--text-soft); text-decoration: none;
+      font-size: 0.85rem; font-weight: 700; transition: color 0.2s;
+    }
+    .back-link:hover { color: var(--white); }
+    .back-link svg { width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:2.5; stroke-linecap:round; stroke-linejoin:round; }
+
+    /* ── Header ─────────────────────────────────────────────── */
+    .page-header {
+      text-align: center;
+      display: flex; flex-direction: column; align-items: center; gap: 0.5rem;
+      padding: 0.5rem 0;
+      animation: fadeUp 0.5s cubic-bezier(0.22,1,0.36,1) both;
+    }
+    @keyframes fadeUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+
+    .bird-bounce {
+      font-size: 3.5rem;
+      animation: bobble 3s ease-in-out infinite;
+      filter: drop-shadow(0 4px 16px rgba(245,200,66,0.4));
+    }
+    @keyframes bobble { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+
+    .page-title {
+      font-family: 'Fredoka One', cursive; font-size: 2rem;
+      background: linear-gradient(135deg, var(--gold) 0%, #fff 60%, var(--teal) 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .page-sub { font-size: 0.88rem; color: var(--text-soft); font-weight: 700; }
+
+    /* ── Step cards ─────────────────────────────────────────── */
+    .steps-title {
+      font-size: 0.75rem; font-weight: 800; color: var(--text-muted);
+      letter-spacing: 1px; text-transform: uppercase;
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      padding-bottom: 0.4rem;
+      animation: fadeUp 0.5s 0.04s cubic-bezier(0.22,1,0.36,1) both;
+    }
+
+    .step-card {
+      background: var(--card-bg); border: 1px solid var(--card-border);
+      border-radius: 18px; padding: 1.2rem 1.3rem;
+      display: flex; align-items: flex-start; gap: 1rem;
+      backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      transition: background 0.2s, transform 0.2s;
+      animation: fadeUp 0.5s cubic-bezier(0.22,1,0.36,1) both;
+    }
+    .step-card:hover { background: rgba(255,255,255,0.09); transform: translateX(4px); }
+
+    .step-num {
+      width: 40px; height: 40px; border-radius: 12px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Fredoka One', cursive; font-size: 1.2rem;
+      background: rgba(245,200,66,0.15); border: 1.5px solid rgba(245,200,66,0.3);
+      color: var(--gold);
+    }
+    .step-body { flex: 1; }
+    .step-title {
+      font-family: 'Fredoka One', cursive; font-size: 1.05rem;
+      color: var(--white); margin-bottom: 0.3rem;
+    }
+    .step-desc {
+      font-size: 0.85rem; color: var(--text-soft); font-weight: 700; line-height: 1.6;
+    }
+    .step-desc strong { color: var(--white); }
+    .step-desc .highlight { color: var(--gold); font-weight: 800; }
+    .step-desc .highlight-teal { color: var(--teal); font-weight: 800; }
+    .step-desc .highlight-red  { color: var(--danger); font-weight: 800; }
+
+    /* ── Controls card ──────────────────────────────────────── */
+    .controls-card {
+      background: var(--card-bg); border: 1px solid var(--card-border);
+      border-radius: 18px; padding: 1.2rem 1.3rem;
+      backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      animation: fadeUp 0.5s 0.08s cubic-bezier(0.22,1,0.36,1) both;
+    }
+    .controls-title {
+      font-family: 'Fredoka One', cursive; font-size: 1.05rem;
+      color: var(--teal); margin-bottom: 0.9rem;
+    }
+    .controls-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem;
+    }
+    .control-item {
+      display: flex; align-items: center; gap: 0.7rem;
+      background: rgba(255,255,255,0.04); border-radius: 10px; padding: 0.7rem 0.9rem;
+    }
+    .control-key {
+      background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 8px; padding: 0.3rem 0.6rem;
+      font-family: 'Fredoka One', cursive; font-size: 0.82rem;
+      color: var(--gold); flex-shrink: 0; white-space: nowrap;
+    }
+    .control-desc { font-size: 0.8rem; font-weight: 700; color: var(--text-soft); line-height: 1.3; }
+
+    /* ── Scoring card ───────────────────────────────────────── */
+    .scoring-card {
+      background: rgba(245,200,66,0.07); border: 1px solid rgba(245,200,66,0.18);
+      border-radius: 18px; padding: 1.2rem 1.3rem;
+      animation: fadeUp 0.5s 0.10s cubic-bezier(0.22,1,0.36,1) both;
+    }
+    .scoring-title {
+      font-family: 'Fredoka One', cursive; font-size: 1.05rem;
+      color: var(--gold); margin-bottom: 0.9rem;
+    }
+    .scoring-rows { display: flex; flex-direction: column; gap: 0.55rem; }
+    .scoring-row {
+      display: flex; align-items: center; gap: 0.8rem;
+      font-size: 0.85rem; font-weight: 700; color: var(--text-soft);
+    }
+    .scoring-icon { font-size: 1.2rem; flex-shrink: 0; width: 28px; text-align: center; }
+    .scoring-val {
+      font-family: 'Fredoka One', cursive; font-size: 1rem; color: var(--gold); flex-shrink: 0;
+    }
+
+    /* ── Season & rewards card ──────────────────────────────── */
+    .rewards-card {
+      background: rgba(0,212,170,0.07); border: 1px solid rgba(0,212,170,0.2);
+      border-radius: 18px; padding: 1.2rem 1.3rem;
+      animation: fadeUp 0.5s 0.12s cubic-bezier(0.22,1,0.36,1) both;
+    }
+    .rewards-title {
+      font-family: 'Fredoka One', cursive; font-size: 1.05rem;
+      color: var(--teal); margin-bottom: 0.9rem;
+    }
+    .reward-rows { display: flex; flex-direction: column; gap: 0.55rem; }
+    .reward-row {
+      display: flex; align-items: center; gap: 0.8rem;
+      background: rgba(255,255,255,0.04); border-radius: 10px; padding: 0.65rem 0.9rem;
+    }
+    .reward-medal { font-size: 1.4rem; flex-shrink: 0; }
+    .reward-info  { flex: 1; }
+    .reward-place {
+      font-family: 'Fredoka One', cursive; font-size: 0.92rem; color: var(--white);
+    }
+    .reward-desc  { font-size: 0.78rem; color: var(--text-muted); font-weight: 700; }
+    .reward-prize {
+      font-family: 'Fredoka One', cursive; font-size: 1rem; color: var(--teal); flex-shrink: 0;
+    }
+
+    /* ── Tips card ──────────────────────────────────────────── */
+    .tips-card {
+      background: rgba(255,90,90,0.06); border: 1px solid rgba(255,90,90,0.18);
+      border-radius: 18px; padding: 1.2rem 1.3rem;
+      animation: fadeUp 0.5s 0.14s cubic-bezier(0.22,1,0.36,1) both;
+    }
+    .tips-title {
+      font-family: 'Fredoka One', cursive; font-size: 1.05rem;
+      color: #ff8a8a; margin-bottom: 0.9rem;
+    }
+    .tips-list { display: flex; flex-direction: column; gap: 0.5rem; }
+    .tip-item {
+      display: flex; align-items: flex-start; gap: 0.6rem;
+      font-size: 0.85rem; font-weight: 700; color: var(--text-soft); line-height: 1.5;
+    }
+    .tip-item span { flex-shrink: 0; }
+
+    /* ── CTA ────────────────────────────────────────────────── */
+    .cta-btn {
+      width: 100%; padding: 1rem;
+      background: linear-gradient(135deg, var(--gold) 0%, #e6a800 100%);
+      color: #1a0f00; font-family: 'Nunito', sans-serif;
+      font-size: 1.05rem; font-weight: 800;
+      border: none; border-radius: 16px;
+      text-decoration: none; display: flex;
+      align-items: center; justify-content: center; gap: 0.5rem;
+      box-shadow: 0 4px 20px rgba(245,200,66,0.35);
+      transition: filter 0.15s, box-shadow 0.15s, transform 0.15s;
+      animation: fadeUp 0.5s 0.16s cubic-bezier(0.22,1,0.36,1) both;
+    }
+    .cta-btn:hover { filter: brightness(1.08); box-shadow: 0 6px 28px rgba(245,200,66,0.5); transform: translateY(-2px); }
+    .cta-btn:active { transform: scale(0.97); }
+
+    /* ── Footer ─────────────────────────────────────────────── */
+    .footer-nav {
+      display: flex; gap: 1.5rem; flex-wrap: wrap; justify-content: center;
+      animation: fadeUp 0.5s 0.18s cubic-bezier(0.22,1,0.36,1) both;
+    }
+    .footer-link {
+      color: var(--text-muted); text-decoration: none;
+      font-size: 0.78rem; font-weight: 700; transition: color 0.2s;
+    }
+    .footer-link:hover { color: var(--text-soft); }
+
+    @media (max-width: 400px) {
+      .controls-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="sky"></div>
+  <div class="stars" id="stars"></div>
+  <div class="ground"></div>
+
+  <main class="page">
+
+    <!-- Top bar -->
+    <div class="top-bar">
+      <a href="index.html" class="back-link">
+        <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+        Home
+      </a>
+    </div>
+
+    <!-- Header -->
+    <div class="page-header">
+      <div class="bird-bounce">🐦</div>
+      <h1 class="page-title">How to Play</h1>
+      <p class="page-sub">Everything you need to fly, score, and win.</p>
+    </div>
+
+    <!-- Steps section -->
+    <p class="steps-title">Getting Started</p>
+
+    <div class="step-card" style="animation-delay:0.04s;">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <p class="step-title">Create Your Account</p>
+        <p class="step-desc">
+          Register with your <strong>username</strong>, <strong>email</strong>, and <strong>phone number</strong>.
+          Your username is what appears on the leaderboard, so choose wisely!
+          You can also sign in with Google for a faster start.
+        </p>
+      </div>
+    </div>
+
+    <div class="step-card" style="animation-delay:0.06s;">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <p class="step-title">Tap to Flap</p>
+        <p class="step-desc">
+          Your bird falls due to gravity. <span class="highlight">Tap the screen</span> (or press Space) to flap and rise.
+          Time your flaps carefully — too fast and you hit the top, too slow and you crash to the ground.
+          The sweet spot is a steady rhythm.
+        </p>
+      </div>
+    </div>
+
+    <div class="step-card" style="animation-delay:0.08s;">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <p class="step-title">Dodge the Pipes</p>
+        <p class="step-desc">
+          Green pipes come from the right at increasing intervals. Fly your bird through the
+          <span class="highlight">gap between the top and bottom pipe</span>.
+          <span class="highlight-red">Touching any pipe or the ground ends your game immediately.</span>
+          Each pair of pipes you pass scores you <span class="highlight">+1 point</span>.
+        </p>
+      </div>
+    </div>
+
+    <div class="step-card" style="animation-delay:0.10s;">
+      <div class="step-num">4</div>
+      <div class="step-body">
+        <p class="step-title">Beat Your Best Score</p>
+        <p class="step-desc">
+          Your <span class="highlight">Best Score</span> is saved forever — it never resets.
+          Your <span class="highlight-teal">Season Score</span> resets at the end of each month.
+          Play multiple games to climb both boards. Only your highest score per game counts.
+        </p>
+      </div>
+    </div>
+
+    <div class="step-card" style="animation-delay:0.12s;">
+      <div class="step-num">5</div>
+      <div class="step-body">
+        <p class="step-title">Compete Every Month</p>
+        <p class="step-desc">
+          The leaderboard resets at the end of every month. The <span class="highlight">top 3 players</span>
+          each season are saved to the <strong>Hall of Fame</strong> forever and may qualify for a
+          <span class="highlight-teal">monthly reward</span>. A new season then begins — fresh start for everyone!
+        </p>
+      </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="controls-card">
+      <p class="controls-title">🎮 Controls</p>
+      <div class="controls-grid">
+        <div class="control-item">
+          <div class="control-key">Tap</div>
+          <p class="control-desc">Flap the bird upward</p>
+        </div>
+        <div class="control-item">
+          <div class="control-key">Space</div>
+          <p class="control-desc">Flap (keyboard)</p>
+        </div>
+        <div class="control-item">
+          <div class="control-key">↑ Arrow</div>
+          <p class="control-desc">Flap (keyboard)</p>
+        </div>
+        <div class="control-item">
+          <div class="control-key">P / Esc</div>
+          <p class="control-desc">Pause / Resume</p>
+        </div>
+        <div class="control-item">
+          <div class="control-key">🔊</div>
+          <p class="control-desc">Toggle sound on/off</p>
+        </div>
+        <div class="control-item">
+          <div class="control-key">⏸</div>
+          <p class="control-desc">Pause button</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scoring -->
+    <div class="scoring-card">
+      <p class="scoring-title">🏆 Scoring System</p>
+      <div class="scoring-rows">
+        <div class="scoring-row">
+          <span class="scoring-icon">🟢</span>
+          <span style="flex:1;">Each pipe pair you pass through</span>
+          <span class="scoring-val">+1 pt</span>
+        </div>
+        <div class="scoring-row">
+          <span class="scoring-icon">🥇</span>
+          <span style="flex:1;">Your best single-game score ever</span>
+          <span class="scoring-val">Best Score</span>
+        </div>
+        <div class="scoring-row">
+          <span class="scoring-icon">📅</span>
+          <span style="flex:1;">Your best score this month</span>
+          <span class="scoring-val">Season Score</span>
+        </div>
+        <div class="scoring-row">
+          <span class="scoring-icon">🔄</span>
+          <span style="flex:1;">Season resets at month end</span>
+          <span class="scoring-val" style="color:var(--teal);">Monthly</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Rewards -->
+    <div class="rewards-card">
+      <p class="rewards-title">🎁 Monthly Rewards</p>
+      <div class="reward-rows">
+        <div class="reward-row">
+          <span class="reward-medal">🥇</span>
+          <div class="reward-info">
+            <p class="reward-place">1st Place</p>
+            <p class="reward-desc">Season Champion · Hall of Fame · Reward eligible</p>
+          </div>
+          <span class="reward-prize">🏆</span>
+        </div>
+        <div class="reward-row">
+          <span class="reward-medal">🥈</span>
+          <div class="reward-info">
+            <p class="reward-place">2nd Place</p>
+            <p class="reward-desc">Runner-up · Hall of Fame · Reward eligible</p>
+          </div>
+          <span class="reward-prize">🎖️</span>
+        </div>
+        <div class="reward-row">
+          <span class="reward-medal">🥉</span>
+          <div class="reward-info">
+            <p class="reward-place">3rd Place</p>
+            <p class="reward-desc">Third Place · Hall of Fame · Reward eligible</p>
+          </div>
+          <span class="reward-prize">🎖️</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tips -->
+    <div class="tips-card">
+      <p class="tips-title">💡 Pro Tips</p>
+      <div class="tips-list">
+        <div class="tip-item"><span>🎯</span><span>Don't spam tap — one controlled flap at a time keeps the bird stable.</span></div>
+        <div class="tip-item"><span>👁️</span><span>Watch the gap, not the bird. Your eyes should be on where you're going.</span></div>
+        <div class="tip-item"><span>😮‍💨</span><span>Breathe. Panic causes overcorrection. Stay calm past pipe 10 and you're flying.</span></div>
+        <div class="tip-item"><span>🔁</span><span>Play consistently every day in a season — your best game is what counts.</span></div>
+        <div class="tip-item"><span>🔇</span><span>Mute distractions. The score sound helps you keep rhythm — use it.</span></div>
+        <div class="tip-item"><span>📱</span><span>On mobile, tap the centre of the screen for the most reliable input.</span></div>
+      </div>
+    </div>
+
+    <!-- CTA -->
+    <a href="game.html" class="cta-btn">
+      🐦 Start Flying Now
+    </a>
+
+    <!-- Footer -->
+    <nav class="footer-nav">
+      <a href="dashboard.html"      class="footer-link">🎮 Dashboard</a>
+      <a href="leaderboard.html"    class="footer-link">📊 Leaderboard</a>
+      <a href="privacy-policy.html" class="footer-link">🔒 Privacy Policy</a>
+    </nav>
+
+  </main>
+
+  <!-- Stars -->
+  <script>
+    const c = document.getElementById("stars");
+    for (let i = 0; i < 60; i++) {
+      const s = document.createElement("div");
+      s.className = "star";
+      const sz = Math.random()*2+0.5;
+      s.style.cssText=`width:${sz}px;height:${sz}px;top:${Math.random()*70}%;left:${Math.random()*100}%;--d:${(Math.random()*3+2).toFixed(1)}s;--delay:-${(Math.random()*4).toFixed(1)}s;--op:${(Math.random()*0.5+0.4).toFixed(2)};`;
+      c.appendChild(s);
+    }
+  </script>
+
+</body>
+</html>
