@@ -14,9 +14,7 @@
     background: #87CEEB;
   }
 
-  h2 {
-    margin: 10px;
-  }
+  h2 { margin: 10px; }
 
   canvas {
     display: block;
@@ -36,7 +34,7 @@
     display: none;
     justify-content: center;
     align-items: center;
-    background: rgba(0, 0, 0, 0.7);
+    background: rgba(0,0,0,0.7);
     z-index: 1000;
   }
 
@@ -63,7 +61,6 @@
     top: 10px;
     right: 10px;
     z-index: 2000;
-    font-size: 16px;
   }
 
   #pauseToggle {
@@ -71,7 +68,6 @@
     top: 10px;
     right: 70px;
     z-index: 2000;
-    font-size: 16px;
   }
 </style>
 </head>
@@ -96,57 +92,27 @@ const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 const ui = document.getElementById("ui");
 
-// ---------------- SOUND STATE ----------------
+// ---------------- STATE ----------------
 let soundEnabled = localStorage.getItem("soundEnabled") !== "false";
-
-const soundToggle = document.getElementById("soundToggle");
-
-function updateSoundIcon() {
-  soundToggle.textContent = soundEnabled ? "🔊" : "🔇";
-}
-updateSoundIcon();
-
-soundToggle.onclick = () => {
-  soundEnabled = !soundEnabled;
-  localStorage.setItem("soundEnabled", soundEnabled);
-  updateSoundIcon();
-};
-
-// ---------------- PAUSE ----------------
+let gameStarted = false;
+let gameOver = false;
 let gamePaused = false;
+
+let score = 0;
+let bestScore = 0;
+let pipeTimer = null;
+
+// ---------------- UI ----------------
+const soundToggle = document.getElementById("soundToggle");
 const pauseToggle = document.getElementById("pauseToggle");
 
-function updatePauseIcon() {
+function updateUI() {
+  soundToggle.textContent = soundEnabled ? "🔊" : "🔇";
   pauseToggle.textContent = gamePaused ? "▶️" : "⏸️";
 }
-updatePauseIcon();
+updateUI();
 
-pauseToggle.onclick = () => {
-  if (!gameStarted || gameOver) return;
-
-  gamePaused = !gamePaused;
-  updatePauseIcon();
-
-  if (gamePaused) {
-    ui.style.display = "flex";
-    ui.innerHTML = `
-      <div class="panel">
-        <h2>Paused</h2>
-        <button onclick="resumeGame()">Resume</button>
-      </div>
-    `;
-  } else {
-    ui.style.display = "none";
-  }
-};
-
-window.resumeGame = () => {
-  gamePaused = false;
-  updatePauseIcon();
-  ui.style.display = "none";
-};
-
-// ---------------- SOUNDS ----------------
+// ---------------- SOUND ----------------
 const scoreSound = new Audio("assets/sounds/score.mp3");
 const gameOverSound = new Audio("assets/sounds/game-over.mp3");
 const bestScoreSound = new Audio("assets/sounds/best-score.mp3");
@@ -157,19 +123,11 @@ function playSound(sound) {
   sound.play().catch(() => {});
 }
 
-// FIX: more reliable score sound
-function playScoreSound() {
+function playScore() {
   if (!soundEnabled) return;
-  const s = scoreSound.cloneNode();
+  const s = new Audio(scoreSound.src);
   s.play().catch(() => {});
 }
-
-// ---------------- STATE ----------------
-let gameStarted = false;
-let gameOver = false;
-let score = 0;
-let pipeTimer = null;
-let bestScore = 0;
 
 // ---------------- BIRD ----------------
 const birdImage = new Image();
@@ -185,7 +143,7 @@ const bird = {
   height: 40
 };
 
-// ---------------- CLOUDS ----------------
+// ---------------- GAME OBJECTS ----------------
 const clouds = [
   { x: 50, y: 80, speed: 0.3 },
   { x: 220, y: 150, speed: 0.2 },
@@ -193,7 +151,6 @@ const clouds = [
   { x: 300, y: 120, speed: 0.25 }
 ];
 
-// ---------------- PIPES ----------------
 const pipes = [];
 const PIPE_WIDTH = 60;
 const PIPE_GAP = 200;
@@ -202,20 +159,29 @@ const GROUND_HEIGHT = 60;
 
 // ---------------- AUTH ----------------
 onAuthStateChanged(auth, async (user) => {
-  if (!user) {
-    window.location.href = "login.html";
-    return;
-  }
+  if (!user) return (window.location.href = "login.html");
 
   const ref = doc(db, "users", user.uid);
   const snap = await getDoc(ref);
 
-  if (snap.exists()) {
+  if (!snap.exists()) {
+    await setDoc(ref, {
+      bestScore: 0,
+      season: getSeason(),
+      seasonScore: 0
+    });
+  } else {
     bestScore = snap.data().bestScore || 0;
   }
 });
 
-// ---------------- START GAME ----------------
+// ---------------- SEASON ----------------
+function getSeason() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+}
+
+// ---------------- GAME ----------------
 function startGame() {
   if (gameStarted) return;
 
@@ -224,7 +190,7 @@ function startGame() {
 
   pipeTimer = setInterval(() => {
     if (!gameOver && !gamePaused) createPipe();
-  }, 3000);
+  }, 2500);
 }
 
 // ---------------- FLAP ----------------
@@ -238,52 +204,77 @@ function flap() {
 
 // ---------------- PIPE ----------------
 function createPipe() {
-  const topHeight = Math.random() * (350 - 80) + 80;
-
   pipes.push({
     x: canvas.width,
-    topHeight,
+    topHeight: Math.random() * 250 + 80,
     passed: false
   });
 }
 
 // ---------------- INPUT ----------------
 canvas.addEventListener("click", flap);
-canvas.addEventListener("touchstart", (e) => {
+canvas.addEventListener("touchstart", e => {
   e.preventDefault();
   flap();
 });
 
-// ---------------- END GAME ----------------
-function getCurrentSeason() {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-}
+// ---------------- PAUSE ----------------
+pauseToggle.onclick = () => {
+  if (!gameStarted || gameOver) return;
 
+  gamePaused = !gamePaused;
+  updateUI();
+
+  ui.style.display = gamePaused ? "flex" : "none";
+  if (gamePaused) {
+    ui.innerHTML = `
+      <div class="panel">
+        <h2>Paused</h2>
+        <button onclick="resumeGame()">Resume</button>
+      </div>`;
+  }
+};
+
+window.resumeGame = () => {
+  gamePaused = false;
+  updateUI();
+  ui.style.display = "none";
+};
+
+// ---------------- END GAME ----------------
 async function endGame() {
   if (gameOver) return;
 
   gameOver = true;
   playSound(gameOverSound);
-
-  if (pipeTimer) clearInterval(pipeTimer);
+  clearInterval(pipeTimer);
 
   const user = auth.currentUser;
-  let isNewBest = false;
+  const season = getSeason();
 
   if (user) {
     const ref = doc(db, "users", user.uid);
     const snap = await getDoc(ref);
+    const data = snap.data();
 
-    if (snap.exists()) {
-      const data = snap.data();
+    let updates = {};
 
-      if (score > (data.bestScore || 0)) {
-        await updateDoc(ref, { bestScore: score });
-        isNewBest = true;
-        playSound(bestScoreSound);
-      }
+    // best score
+    if (score > (data.bestScore || 0)) {
+      updates.bestScore = score;
     }
+
+    // season logic
+    if (!data.season || data.season !== season) {
+      updates.season = season;
+      updates.seasonScore = score;
+    } else if (score > (data.seasonScore || 0)) {
+      updates.seasonScore = score;
+    }
+
+    await updateDoc(ref, updates);
+
+    if (updates.bestScore) playSound(bestScoreSound);
   }
 
   ui.style.display = "flex";
@@ -291,11 +282,8 @@ async function endGame() {
     <div class="panel">
       <h2>Game Over</h2>
       <p>Score: ${score}</p>
-      ${isNewBest ? "<p>🎉 New Best Score!</p>" : ""}
       <button onclick="restartGame()">Play Again</button>
-      <button onclick="goDashboard()">Dashboard</button>
-    </div>
-  `;
+    </div>`;
 }
 
 // ---------------- UPDATE ----------------
@@ -306,86 +294,56 @@ function update() {
   bird.y += bird.velocity;
 
   for (let i = pipes.length - 1; i >= 0; i--) {
-    const pipe = pipes[i];
-    pipe.x -= PIPE_SPEED;
+    const p = pipes[i];
+    p.x -= PIPE_SPEED;
 
-    if (!pipe.passed && pipe.x + PIPE_WIDTH < bird.x) {
-      pipe.passed = true;
+    if (!p.passed && p.x + PIPE_WIDTH < bird.x) {
+      p.passed = true;
       score++;
-      playScoreSound();
+      playScore();
     }
 
-    const collision =
-      bird.x + bird.width > pipe.x &&
-      bird.x < pipe.x + PIPE_WIDTH &&
-      (bird.y < pipe.topHeight ||
-        bird.y + bird.height > pipe.topHeight + PIPE_GAP);
+    const hit =
+      bird.x < p.x + PIPE_WIDTH &&
+      bird.x + bird.width > p.x &&
+      (bird.y < p.topHeight ||
+        bird.y + bird.height > p.topHeight + PIPE_GAP);
 
-    if (collision) endGame();
+    if (hit) endGame();
   }
 
-  if (bird.y > canvas.height - GROUND_HEIGHT - bird.height) {
-    endGame();
-  }
+  if (bird.y > canvas.height - GROUND_HEIGHT) endGame();
 }
 
 // ---------------- DRAW ----------------
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // clouds
-  for (const cloud of clouds) {
-    cloud.x -= cloud.speed;
-    if (cloud.x < -80) cloud.x = canvas.width + 80;
+  ctx.font = "16px Arial";
 
-    ctx.fillStyle = "rgba(255,255,255,0.85)";
+  clouds.forEach(c => {
+    c.x -= c.speed;
+    if (c.x < -50) c.x = canvas.width + 50;
+
+    ctx.fillStyle = "white";
     ctx.beginPath();
-    ctx.arc(cloud.x, cloud.y, 18, 0, Math.PI * 2);
-    ctx.arc(cloud.x + 20, cloud.y - 10, 22, 0, Math.PI * 2);
-    ctx.arc(cloud.x + 42, cloud.y, 18, 0, Math.PI * 2);
+    ctx.arc(c.x, c.y, 18, 0, Math.PI * 2);
     ctx.fill();
-  }
+  });
 
-  // pipes
   ctx.fillStyle = "green";
-  for (const pipe of pipes) {
-    ctx.fillRect(pipe.x, 0, PIPE_WIDTH, pipe.topHeight);
-    ctx.fillRect(pipe.x, pipe.topHeight + PIPE_GAP, PIPE_WIDTH, canvas.height);
-  }
+  pipes.forEach(p => {
+    ctx.fillRect(p.x, 0, PIPE_WIDTH, p.topHeight);
+    ctx.fillRect(p.x, p.topHeight + PIPE_GAP, PIPE_WIDTH, canvas.height);
+  });
 
-  // bird
   ctx.drawImage(birdImage, bird.x, bird.y, bird.width, bird.height);
 
-  // ground
   ctx.fillStyle = "#c2b280";
   ctx.fillRect(0, canvas.height - GROUND_HEIGHT, canvas.width, GROUND_HEIGHT);
 
-  // score
   ctx.fillStyle = "black";
-  ctx.fillText("Score: " + score, 10, 30);
-
-  // start screen
-  if (!gameStarted && !gameOver) {
-    ctx.fillStyle = "rgba(0,0,0,0.5)";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    ctx.fillStyle = "white";
-    ctx.font = "30px Arial";
-    ctx.fillText("HoverBird", 100, 250);
-
-    ctx.font = "20px Arial";
-    ctx.fillText("Tap to Start", 120, 300);
-  }
-
-  // pause overlay
-  if (gamePaused) {
-    ctx.fillStyle = "rgba(0,0,0,0.5)";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    ctx.fillStyle = "white";
-    ctx.font = "30px Arial";
-    ctx.fillText("Paused", 140, 300);
-  }
+  ctx.fillText("Score: " + score, 10, 20);
 }
 
 // ---------------- LOOP ----------------
@@ -395,10 +353,18 @@ function loop() {
   requestAnimationFrame(loop);
 }
 
-birdImage.onload = () => loop();
+birdImage.onload = loop;
 
+// ---------------- GLOBALS ----------------
 window.restartGame = () => location.reload();
-window.goDashboard = () => window.location.href = "dashboard.html";
+
+soundToggle.onclick = () => {
+  soundEnabled = !soundEnabled;
+  localStorage.setItem("soundEnabled", soundEnabled);
+  updateUI();
+};
+
+updateUI();
 
 </script>
 
