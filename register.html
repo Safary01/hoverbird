@@ -334,6 +334,20 @@
           <p class="field-hint info" id="hint-email"></p>
         </div>
 
+        <!-- Phone Number -->
+        <div class="form-group">
+          <label class="form-label" for="phone">Phone Number</label>
+          <div class="input-wrap">
+            <span class="input-icon"><svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg></span>
+            <input
+              type="tel" id="phone" name="phone"
+              class="form-input" placeholder="+234 800 000 0000"
+              autocomplete="tel" required
+            />
+          </div>
+          <p class="field-hint info" id="hint-phone">Nigerian or international format e.g. +2348012345678</p>
+        </div>
+
         <!-- Password -->
         <div class="form-group">
           <label class="form-label" for="password">Password</label>
@@ -462,6 +476,7 @@
     // ── Live validation helpers ────────────────────────────
     const usernameInput = document.getElementById("username");
     const emailInput    = document.getElementById("email");
+    const phoneInput    = document.getElementById("phone");
     const passwordInput = document.getElementById("password");
     const confirmInput  = document.getElementById("confirm-password");
 
@@ -495,6 +510,20 @@
         setFieldState(emailInput, hint, "bad", "Please enter a valid email.");
       } else {
         setFieldState(emailInput, hint, "ok", "Valid email.");
+      }
+    });
+
+    // Phone validation
+    phoneInput.addEventListener("input", () => {
+      const val  = phoneInput.value.trim();
+      const hint = document.getElementById("hint-phone");
+      if (!val) { setFieldState(phoneInput, hint, "info", "Nigerian or international format e.g. +2348012345678"); return; }
+      // Accept formats: +234XXXXXXXXXX, 0XXXXXXXXXX, or 11+ digit international
+      const clean = val.replace(/[\s\-().]/g, "");
+      if (!/^(\+?[1-9]\d{7,14}|0\d{10})$/.test(clean)) {
+        setFieldState(phoneInput, hint, "bad", "Enter a valid phone number.");
+      } else {
+        setFieldState(phoneInput, hint, "ok", "Valid phone number.");
       }
     });
 
@@ -561,10 +590,11 @@
     }
 
     // ── Create Firestore doc ───────────────────────────────
-    async function createUserDoc(uid, username, email) {
+    async function createUserDoc(uid, username, email, phone = "") {
       await setDoc(doc(db, "users", uid), {
         username,
         email,
+        phone,
         bestScore:   0,
         seasonScore: 0,
         createdAt:   serverTimestamp(),
@@ -578,15 +608,20 @@
 
       const username = usernameInput.value.trim();
       const email    = emailInput.value.trim();
+      const phone    = phoneInput.value.trim();
       const password = passwordInput.value;
       const confirm  = confirmInput.value;
 
       // Client-side validation
-      if (!username || !email || !password || !confirm) {
+      if (!username || !email || !phone || !password || !confirm) {
         showError("Please fill in all fields."); return;
       }
       if (!/^[a-zA-Z0-9_]{3,20}$/.test(username)) {
         showError("Username must be 3–20 characters, letters/numbers/underscores only."); return;
+      }
+      const cleanPhone = phone.replace(/[\s\-().]/g, "");
+      if (!/^(\+?[1-9]\d{7,14}|0\d{10})$/.test(cleanPhone)) {
+        showError("Please enter a valid phone number."); return;
       }
       if (password.length < 8) {
         showError("Password must be at least 8 characters."); return;
@@ -611,7 +646,7 @@
         await updateProfile(cred.user, { displayName: username });
 
         // Create Firestore doc
-        await createUserDoc(cred.user.uid, username, email);
+        await createUserDoc(cred.user.uid, username, email, cleanPhone);
 
         showSuccess("Account created! Taking you to your dashboard…");
         setTimeout(() => window.location.replace("dashboard.html"), 1000);
