@@ -355,6 +355,7 @@
     let userBest     = 0;
     let userSeason   = 0;
     let userGames    = 0;
+    let userUsername = "";
 
     onAuthStateChanged(auth, async (user) => {
       if (!user) { window.location.replace("login.html"); return; }
@@ -362,10 +363,14 @@
 
       const snap = await getDoc(doc(db, "users", user.uid));
       if (snap.exists()) {
-        const d   = snap.data();
-        userBest   = d.bestScore   || 0;
-        userSeason = d.seasonScore || 0;
-        userGames  = d.gamesPlayed || 0;
+        const d    = snap.data();
+        userBest     = d.bestScore   || 0;
+        userSeason   = d.seasonScore || 0;
+        userGames    = d.gamesPlayed || 0;
+        // Use Firestore username first, then Auth displayName, never email
+        userUsername = d.username || user.displayName || "";
+      } else {
+        userUsername = user.displayName || "";
       }
 
       // Update HUD best
@@ -384,9 +389,9 @@
       try {
         const ref = doc(db, "users", currentUser.uid);
 
-        // Always write username + email so partial docs get filled in
+        // Always write the correct Firestore username — never the email
         const updates = {
-          username:    currentUser.displayName || currentUser.email?.split("@")[0] || "Player",
+          username:    userUsername,
           email:       currentUser.email || "",
           gamesPlayed: userGames + 1,
         };
@@ -442,7 +447,7 @@
       const GRAVITY      = 0.45;
       const FLAP_FORCE   = -9;
       const PIPE_WIDTH   = 68;
-      const PIPE_GAP     = 190;
+      const PIPE_GAP     = 165;
       const PIPE_SPEED   = 2.8;
       const PIPE_SPAWN_X = 520;
       const PIPE_INTERVAL= 90;  // frames
