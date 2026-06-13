@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HoverBird — Dashboard</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --sky-top:     #0a1628;
+      --sky-mid:     #0d2a5c;
+      --sky-low:     #1a4a8a;
+      --gold:        #f5c842;
+      --gold-dark:   #c9920a;
+      --teal:        #00d4aa;
+      --teal-dark:   #009977;
+      --white:       #ffffff;
+      --text-soft:   rgba(255,255,255,0.65);
+      --text-muted:  rgba(255,255,255,0.35);
+      --card-bg:     rgba(255,255,255,0.06);
+      --card-border: rgba(255,255,255,0.12);
+      --card-hover:  rgba(255,255,255,0.09);
+    }
+
+    html, body {
+      min-height: 100%;
+      font-family: 'Nunito', sans-serif;
+      background: var(--sky-top);
+      color: var(--white);
+      overflow-x: hidden;
+    }
+
+    /* ── Background ─────────────────────────────────────────── */
+    .sky {
+      position: fixed; inset: 0;
+      background: linear-gradient(180deg, var(--sky-top) 0%, var(--sky-mid) 55%, var(--sky-low) 100%);
+      z-index: 0;
+    }
+    .stars { position: fixed; inset: 0; z-index: 1; pointer-events: none; }
+    .star {
+      position: absolute; background: #fff; border-radius: 50%;
+      animation: twinkle var(--d,3s) ease-in-out infinite var(--delay,0s); opacity: 0;
+    }
+    @keyframes twinkle { 0%,100%{opacity:0} 50%{opacity:var(--op,0.8)} }
+
+    .ground {
+      position: fixed; bottom: 0; left: 0; right: 0; height: 70px;
+      background: linear-gradient(180deg, #1a5c2a 0%, #0d3a18 100%);
+      z-index: 3; border-top: 3px solid #2a8a3a;
+    }
+    .ground::before {
+      content:''; position:absolute; top:-10px; left:0; right:0; height:10px;
+      background: repeating-linear-gradient(90deg,#2a8a3a 0,#2a8a3a 30px,#1a5c2a 30px,#1a5c2a 60px);
+    }
+
+    /* ── Loading screen ─────────────────────────────────────── */
+    #loading-screen {
+      position: fixed; inset: 0; background: var(--sky-top);
+      z-index: 999; display: flex; align-items: center;
+      justify-content: center; flex-direction: column; gap: 1rem;
+      transition: opacity 0.4s ease;
+    }
+    #loading-screen.hidden { opacity: 0; pointer-events: none; }
+    .spinner {
+      width: 40px; height: 40px;
+      border: 3px solid rgba(245,200,66,0.2);
+      border-top-color: var(--gold);
+      border-radius: 50%; animation: spin 0.8s linear infinite;
+    }
+    .loading-text { color: var(--text-soft); font-size: 0.9rem; font-weight: 700; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Page layout ────────────────────────────────────────── */
+    .page {
+      position: relative; z-index: 10;
+      min-height: 100vh;
+      display: flex; flex-direction: column;
+      align-items: center;
+      padding: 1.5rem 1.25rem 110px;
+      gap: 1.5rem;
+      max-width: 560px; margin: 0 auto;
+    }
+
+    /* ── Top bar ────────────────────────────────────────────── */
+    .top-bar {
+      width: 100%; display: flex;
+      align-items: center; justify-content: space-between;
+      padding-top: 0.5rem;
+    }
+    .logo-row {
+      display: flex; align-items: center; gap: 0.6rem; text-decoration: none;
+    }
+    .logo-row img {
+      width: 38px; height: 38px; object-fit: contain;
+      filter: drop-shadow(0 2px 8px rgba(245,200,66,0.4));
+    }
+    .logo-row span {
+      font-family: 'Fredoka One', cursive; font-size: 1.3rem;
+      background: linear-gradient(135deg, var(--gold) 0%, #fff 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .logout-btn {
+      display: flex; align-items: center; gap: 0.4rem;
+      background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 100px; padding: 0.4rem 1rem;
+      color: var(--text-soft); font-family: 'Nunito', sans-serif;
+      font-size: 0.82rem; font-weight: 700; cursor: pointer;
+      transition: background 0.2s, color 0.2s;
+    }
+    .logout-btn:hover { background: rgba(255,90,90,0.15); color: #ff8a8a; border-color: rgba(255,90,90,0.2); }
+    .logout-btn svg { width:15px; height:15px; stroke:currentColor; fill:none; stroke-width:2.5; stroke-linecap:round; stroke-linejoin:round; }
+
+    /* ── Hero / greeting ────────────────────────────────────── */
+    .hero {
+      width: 100%; text-align: center;
+      display: flex; flex-direction: column; align-items: center; gap: 0.5rem;
+    }
+    .avatar {
+      width: 80px; height: 80px; border-radius: 50%;
+      background: linear-gradient(135deg, rgba(245,200,66,0.2), rgba(0,212,170,0.2));
+      border: 2px solid rgba(245,200,66,0.3);
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Fredoka One', cursive; font-size: 2rem; color: var(--gold);
+      margin-bottom: 0.3rem;
+      animation: bobble 3s ease-in-out infinite;
+    }
+    @keyframes bobble { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
+
+    .greeting {
+      font-size: 0.85rem; font-weight: 700;
+      color: var(--text-muted); letter-spacing: 1px; text-transform: uppercase;
+    }
+    .username-display {
+      font-family: 'Fredoka One', cursive; font-size: 2rem;
+      background: linear-gradient(135deg, var(--gold) 0%, #fff 60%, var(--teal) 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+      line-height: 1.1;
+    }
+    .rank-badge {
+      display: inline-flex; align-items: center; gap: 0.4rem;
+      background: rgba(245,200,66,0.12); border: 1px solid rgba(245,200,66,0.25);
+      border-radius: 100px; padding: 0.3rem 0.9rem;
+      font-size: 0.82rem; font-weight: 800; color: var(--gold);
+      margin-top: 0.2rem;
+    }
+
+    /* ── Stats grid ─────────────────────────────────────────── */
+    .stats-grid {
+      width: 100%;
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 0.85rem;
+    }
+    .stat-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 18px; padding: 1.2rem 1rem;
+      text-align: center;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      transition: background 0.2s, transform 0.2s;
+      animation: fadeUp 0.5s cubic-bezier(0.22,1,0.36,1) both;
+    }
+    .stat-card:hover { background: var(--card-hover); transform: translateY(-2px); }
+    .stat-card:nth-child(1) { animation-delay: 0.05s; }
+    .stat-card:nth-child(2) { animation-delay: 0.10s; }
+    .stat-card:nth-child(3) { animation-delay: 0.15s; }
+    .stat-card:nth-child(4) { animation-delay: 0.20s; }
+    @keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+
+    .stat-icon { font-size: 1.5rem; margin-bottom: 0.4rem; display: block; }
+    .stat-label {
+      font-size: 0.73rem; font-weight: 700; color: var(--text-muted);
+      letter-spacing: 0.8px; text-transform: uppercase; margin-bottom: 0.3rem;
+    }
+    .stat-value {
+      font-family: 'Fredoka One', cursive; font-size: 2rem;
+      line-height: 1; color: var(--white);
+    }
+    .stat-value.gold  { color: var(--gold); }
+    .stat-value.teal  { color: var(--teal); }
+    .stat-sub {
+      font-size: 0.72rem; color: var(--text-muted);
+      font-weight: 700; margin-top: 0.2rem;
+    }
+
+    /* Season progress bar */
+    .season-bar-wrap {
+      width: 100%; grid-column: 1 / -1;
+      background: var(--card-bg); border: 1px solid var(--card-border);
+      border-radius: 18px; padding: 1rem 1.2rem;
+      backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      animation: fadeUp 0.5s 0.25s cubic-bezier(0.22,1,0.36,1) both;
+    }
+    .season-bar-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 0.6rem;
+    }
+    .season-bar-title {
+      font-size: 0.78rem; font-weight: 700; color: var(--text-soft);
+      letter-spacing: 0.5px; text-transform: uppercase;
+    }
+    .season-bar-score {
+      font-family: 'Fredoka One', cursive; font-size: 1rem; color: var(--teal);
+    }
+    .bar-track {
+      width: 100%; height: 8px; background: rgba(255,255,255,0.08);
+      border-radius: 100px; overflow: hidden;
+    }
+    .bar-fill {
+      height: 100%; border-radius: 100px;
+      background: linear-gradient(90deg, var(--teal-dark), var(--teal));
+      transition: width 1s cubic-bezier(0.22,1,0.36,1);
+      width: 0%;
+    }
+    .bar-labels {
+      display: flex; justify-content: space-between;
+      margin-top: 0.35rem;
+      font-size: 0.7rem; font-weight: 700; color: var(--text-muted);
+    }
+
+    /* ── Action buttons ─────────────────────────────────────── */
+    .actions { width: 100%; display: flex; flex-direction: column; gap: 0.85rem; }
+
+    .btn {
+      width: 100%; padding: 1rem 1.5rem;
+      border-radius: 16px; border: none; cursor: pointer;
+      font-family: 'Nunito', sans-serif; font-size: 1.05rem; font-weight: 800;
+      display: flex; align-items: center; justify-content: center; gap: 0.6rem;
+      text-decoration: none; transition: transform 0.15s, box-shadow 0.15s, filter 0.15s;
+      letter-spacing: 0.3px;
+    }
+    .btn:active { transform: scale(0.97) !important; }
+
+    .btn-play {
+      background: linear-gradient(135deg, var(--gold) 0%, #e6a800 100%);
+      color: #1a0f00;
+      box-shadow: 0 4px 24px rgba(245,200,66,0.4);
+      font-size: 1.15rem;
+    }
+    .btn-play:hover { filter: brightness(1.08); box-shadow: 0 6px 32px rgba(245,200,66,0.55); transform: translateY(-2px); }
+
+    .btn-teal {
+      background: linear-gradient(135deg, var(--teal) 0%, var(--teal-dark) 100%);
+      color: #001a14;
+      box-shadow: 0 4px 20px rgba(0,212,170,0.3);
+    }
+    .btn-teal:hover { filter: brightness(1.08); box-shadow: 0 6px 28px rgba(0,212,170,0.45); transform: translateY(-2px); }
+
+    .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.85rem; }
+
+    .btn-ghost {
+      background: var(--card-bg); color: var(--text-soft);
+      border: 1px solid var(--card-border);
+      backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    }
+    .btn-ghost:hover { background: var(--card-hover); color: var(--white); transform: translateY(-1px); }
+
+    .btn-icon { font-size: 1.2rem; }
+
+    /* ── Quick links ────────────────────────────────────────── */
+    .quick-links {
+      width: 100%; display: flex;
+      justify-content: center; gap: 1.5rem; flex-wrap: wrap;
+      padding-top: 0.3rem;
+    }
+    .quick-link {
+      color: var(--text-muted); text-decoration: none;
+      font-size: 0.78rem; font-weight: 700; letter-spacing: 0.3px;
+      transition: color 0.2s;
+    }
+    .quick-link:hover { color: var(--text-soft); }
+
+    /* ── Responsive ─────────────────────────────────────────── */
+    @media (max-width: 380px) {
+      .username-display { font-size: 1.6rem; }
+      .stat-value { font-size: 1.6rem; }
+      .btn-row { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Loading -->
+  <div id="loading-screen">
+    <div class="spinner"></div>
+    <p class="loading-text">Loading your dashboard…</p>
+  </div>
+
+  <div class="sky"></div>
+  <div class="stars" id="stars"></div>
+  <div class="ground"></div>
+
+  <main class="page" id="main-page" style="display:none;">
+
+    <!-- Top bar -->
+    <div class="top-bar">
+      <a href="index.html" class="logo-row">
+        <img
+          src="https://raw.githubusercontent.com/Safary01/hoverbird/main/assets/images/hoverbird.png"
+          alt="HoverBird"
+          onerror="this.style.display='none'"
+        />
+        <span>HoverBird</span>
+      </a>
+      <button class="logout-btn" id="logout-btn">
+        <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        Sign out
+      </button>
+    </div>
+
+    <!-- Hero / greeting -->
+    <div class="hero">
+      <div class="avatar" id="avatar-initials">?</div>
+      <p class="greeting">Welcome back</p>
+      <h1 class="username-display" id="username-display">Player</h1>
+      <div class="rank-badge" id="rank-badge">
+        <span>🏆</span>
+        <span id="rank-text">Loading rank…</span>
+      </div>
+    </div>
+
+    <!-- Stats grid -->
+    <div class="stats-grid">
+      <!-- Best score -->
+      <div class="stat-card">
+        <span class="stat-icon">🥇</span>
+        <p class="stat-label">Best Score</p>
+        <p class="stat-value gold" id="best-score">—</p>
+        <p class="stat-sub">All time</p>
+      </div>
+
+      <!-- Season score -->
+      <div class="stat-card">
+        <span class="stat-icon">📅</span>
+        <p class="stat-label">Season Score</p>
+        <p class="stat-value teal" id="season-score">—</p>
+        <p class="stat-sub" id="season-label">This month</p>
+      </div>
+
+      <!-- Games played -->
+      <div class="stat-card">
+        <span class="stat-icon">🎮</span>
+        <p class="stat-label">Games Played</p>
+        <p class="stat-value" id="games-played">—</p>
+        <p class="stat-sub">Total</p>
+      </div>
+
+      <!-- Leaderboard rank -->
+      <div class="stat-card">
+        <span class="stat-icon">📊</span>
+        <p class="stat-label">Your Rank</p>
+        <p class="stat-value gold" id="rank-number">—</p>
+        <p class="stat-sub">Season board</p>
+      </div>
+
+      <!-- Season progress bar -->
+      <div class="season-bar-wrap">
+        <div class="season-bar-header">
+          <span class="season-bar-title">🌟 Season Progress</span>
+          <span class="season-bar-score" id="bar-score-label">0 pts</span>
+        </div>
+        <div class="bar-track">
+          <div class="bar-fill" id="bar-fill"></div>
+        </div>
+        <div class="bar-labels">
+          <span>0</span>
+          <span id="bar-mid"></span>
+          <span id="bar-max"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Action buttons -->
+    <div class="actions">
+      <a href="game.html" class="btn btn-play">
+        <span class="btn-icon">🐦</span> Play Now
+      </a>
+      <a href="leaderboard.html" class="btn btn-teal">
+        <span class="btn-icon">📊</span> View Leaderboard
+      </a>
+      <div class="btn-row">
+        <a href="hall-of-fame.html" class="btn btn-ghost">
+          <span class="btn-icon">🏅</span> Hall of Fame
+        </a>
+        <a href="how-to-play.html" class="btn btn-ghost">
+          <span class="btn-icon">❓</span> How to Play
+        </a>
+      </div>
+    </div>
+
+    <!-- Quick links -->
+    <nav class="quick-links">
+      <a href="privacy-policy.html" class="quick-link">🔒 Privacy Policy</a>
+      <a href="admin.html" class="quick-link" id="admin-link" style="display:none;">⚙️ Admin Panel</a>
+    </nav>
+
+  </main>
+
+  <!-- Firebase logic -->
+  <script type="module">
+    import { auth, db, ADMIN_UID } from "./js/firebase-config.js";
+    import { onAuthStateChanged, signOut }
+      from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+    import {
+      doc, getDoc, collection, query,
+      orderBy, getDocs, setDoc, serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+    const loadingScreen = document.getElementById("loading-screen");
+    const mainPage      = document.getElementById("main-page");
+
+    function hideLoading() {
+      loadingScreen.classList.add("hidden");
+      mainPage.style.display = "flex";
+      setTimeout(() => loadingScreen.remove(), 400);
+    }
+
+    // ── Current season key ─────────────────────────────────
+    function seasonKey() {
+      const n = new Date();
+      return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,"0")}`;
+    }
+
+    // ── Auto-heal missing fields on any user doc ───────────
+    async function healUserDoc(user, data) {
+      const missing = {};
+
+      if (!data.username)                 missing.username      = user.displayName || user.email.split("@")[0];
+      if (!data.email)                    missing.email         = user.email || "";
+      if (data.phone      === undefined)  missing.phone         = "";
+      if (data.emailVerified === undefined) missing.emailVerified = user.emailVerified || false;
+      if (data.bestScore  === undefined)  missing.bestScore     = 0;
+      if (data.seasonScore=== undefined)  missing.seasonScore   = 0;
+      if (data.gamesPlayed=== undefined)  missing.gamesPlayed   = 0;
+      if (!data.season)                   missing.season        = seasonKey();
+      if (!data.createdAt)                missing.createdAt     = serverTimestamp();
+
+      if (Object.keys(missing).length > 0) {
+        try {
+          await setDoc(doc(db, "users", user.uid), missing, { merge: true });
+          console.log("Healed missing fields:", Object.keys(missing));
+        } catch(e) {
+          console.error("Heal failed:", e);
+        }
+      }
+    }
+
+    // ── Auth gate ──────────────────────────────────────────
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        window.location.replace("login.html");
+        return;
+      }
+      await loadDashboard(user);
+      hideLoading();
+    });
+
+    // ── Load dashboard data ────────────────────────────────
+    async function loadDashboard(user) {
+      try {
+        // Fetch this user's doc
+        const userSnap = await getDoc(doc(db, "users", user.uid));
+        const data = userSnap.exists() ? userSnap.data() : {};
+
+        // Silently fix any missing fields in the background
+        healUserDoc(user, data);
+
+        const username    = data.username    || user.displayName || "Player";
+        const bestScore   = data.bestScore   || 0;
+        const seasonScore = data.seasonScore || 0;
+        const gamesPlayed = data.gamesPlayed || 0;
+
+        // ── Update UI ──────────────────────────────────────
+        document.getElementById("username-display").textContent = username;
+        document.getElementById("best-score").textContent       = bestScore.toLocaleString();
+        document.getElementById("season-score").textContent     = seasonScore.toLocaleString();
+        document.getElementById("games-played").textContent     = gamesPlayed.toLocaleString();
+
+        // Avatar initials
+        const initials = username.slice(0, 2).toUpperCase();
+        document.getElementById("avatar-initials").textContent = initials;
+
+        // Season label (current month)
+        const monthName = new Date().toLocaleString("default", { month: "long" });
+        document.getElementById("season-label").textContent = monthName;
+
+        // Show admin link if admin
+        if (user.uid === ADMIN_UID) {
+          document.getElementById("admin-link").style.display = "inline";
+        }
+
+        // ── Fetch leaderboard to get rank ──────────────────
+        const lbQuery = query(
+          collection(db, "users"),
+          orderBy("seasonScore", "desc")
+        );
+        const lbSnap  = await getDocs(lbQuery);
+        const players = [];
+        lbSnap.forEach(d => players.push({ uid: d.id, ...d.data() }));
+
+        const rankIndex = players.findIndex(p => p.uid === user.uid);
+        const rank      = rankIndex >= 0 ? rankIndex + 1 : null;
+        const topScore  = players.length > 0 ? (players[0].seasonScore || 1) : 1;
+
+        // Rank display
+        const rankEl    = document.getElementById("rank-number");
+        const rankBadge = document.getElementById("rank-text");
+        if (rank === 1) {
+          rankEl.textContent    = "🥇";
+          rankBadge.textContent = "You're #1! 🎉";
+        } else if (rank === 2) {
+          rankEl.textContent    = "🥈";
+          rankBadge.textContent = "Rank #2";
+        } else if (rank === 3) {
+          rankEl.textContent    = "🥉";
+          rankBadge.textContent = "Rank #3";
+        } else if (rank) {
+          rankEl.textContent    = `#${rank}`;
+          rankBadge.textContent = `Rank #${rank} this season`;
+        } else {
+          rankEl.textContent    = "—";
+          rankBadge.textContent = "Play to get ranked!";
+        }
+
+        // Season progress bar
+        const pct   = topScore > 0 ? Math.min((seasonScore / topScore) * 100, 100) : 0;
+        const barMax = Math.max(topScore, seasonScore, 50);
+        const barMid = Math.round(barMax / 2);
+
+        document.getElementById("bar-score-label").textContent = `${seasonScore.toLocaleString()} pts`;
+        document.getElementById("bar-max").textContent         = barMax.toLocaleString();
+        document.getElementById("bar-mid").textContent         = barMid.toLocaleString();
+
+        // Animate bar after a short delay
+        setTimeout(() => {
+          document.getElementById("bar-fill").style.width = `${pct}%`;
+        }, 300);
+
+      } catch (err) {
+        console.error("Dashboard load error:", err);
+      }
+    }
+
+    // ── Logout ─────────────────────────────────────────────
+    document.getElementById("logout-btn").addEventListener("click", async () => {
+      await signOut(auth);
+      window.location.replace("index.html");
+    });
+  </script>
+
+  <!-- Stars -->
+  <script>
+    const c = document.getElementById("stars");
+    for (let i = 0; i < 80; i++) {
+      const s = document.createElement("div");
+      s.className = "star";
+      const sz = Math.random()*2+0.5;
+      s.style.cssText=`width:${sz}px;height:${sz}px;top:${Math.random()*70}%;left:${Math.random()*100}%;--d:${(Math.random()*3+2).toFixed(1)}s;--delay:-${(Math.random()*4).toFixed(1)}s;--op:${(Math.random()*0.5+0.4).toFixed(2)};`;
+      c.appendChild(s);
+    }
+  </script>
+
+</body>
+</html>
