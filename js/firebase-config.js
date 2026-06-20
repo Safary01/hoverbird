@@ -29,7 +29,7 @@ const analytics = getAnalytics(app);
 // ── Admin UID ───────────────────────────────────────────────
 //  Replace this string with your own Firebase UID after you
 //  log in once and copy it from Firebase Console → Auth tab.
-export const ADMIN_UID = "9ekENOeDE3g09wv0isy50A2UbVt2";
+export const ADMIN_UID = "TdkBDyJTTpaHrdaEzMSgsemsCb92";
 
 // ── Exports (used by every page) ───────────────────────────
 export { app, auth, db, analytics };
